@@ -1,0 +1,21 @@
+[Unit]
+Description=career-ops web dashboard
+After=network.target
+
+[Service]
+Type=simple
+# setup.sh replaces __USER__ and __HOME__ with the real values before installing this unit.
+User=__USER__
+WorkingDirectory=__HOME__/CareerReboot/agents/career-ops/web
+ExecStart=/usr/bin/npm run start -- -H 127.0.0.1 -p 3000
+Restart=on-failure
+RestartSec=5
+Environment=NODE_ENV=production
+# -H 127.0.0.1 is deliberate: Next binds 0.0.0.0 by default, which combined
+# with a misconfigured firewall rule would expose the dashboard (resume, PII,
+# API-cost-triggering routes, no built-in login) to the whole internet.
+# Bound to localhost, it's reachable only via SSH tunnel or Tailscale — see
+# deploy/gcp/README.md "Accessing the web app".
+
+[Install]
+WantedBy=multi-user.target

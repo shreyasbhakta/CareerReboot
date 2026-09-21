@@ -1,0 +1,29 @@
+# CareerReboot cron — copy relevant lines into `crontab -e` on the VM.
+# Paths assume the repo lives at ~/CareerReboot; adjust CD if not.
+#
+# Log to a file per job so a silent cron failure is debuggable later
+# (`tail -f ~/career-ops.log`).
+
+CD=$HOME/CareerReboot/agents/career-ops
+LOG=$HOME/career-ops.log
+
+# Scan job boards for new matches — cheap (free-tier model / zero-LLM Greenhouse
+# API scan), safe to run often during an active sprint. Every 4 hours, 8am-8pm.
+0 8,12,16,20 * * * cd $CD && node scan.mjs >> $LOG 2>&1
+
+# Weekly digest of interview-prep notes — Sunday evening.
+0 18 * * 0 cd $CD && node weekly-digest.mjs --summary >> $LOG 2>&1
+
+# Follow-up cadence check — once a day, morning. Tells you who's due a
+# follow-up; does not send anything itself.
+0 9 * * * cd $CD && node followup-cadence.mjs --summary >> $LOG 2>&1
+
+# Pipeline / tracker health check — catches a broken tracker or missing JD
+# archive before it silently accumulates. Once a day.
+30 9 * * * cd $CD && node verify-pipeline.mjs >> $LOG 2>&1
+
+# NOT cron'd on purpose: tailoring a CV/cover letter (generate-cover-letter.mjs,
+# pdf mode) and prepare-application.mjs. Those call the paid Claude API per
+# role and end with you reviewing output before it goes anywhere — trigger
+# them yourself (or via a Claude Code / Codex session) per shortlisted role,
+# not on a blind timer.

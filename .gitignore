@@ -1,0 +1,17 @@
+# Secrets — never commit
+.env
+*.env
+!*.env.example
+
+# Local AI-tool state/config — machine-specific, never shared. .claude/ holds
+# session worktrees and lock files; .continue/ can hold model config that
+# resolves secrets from its own .env (see Continue's secrets docs) — neither
+# belongs in the repo regardless.
+.claude/
+.continue/
+
+# Dependencies
+node_modules/
+
+# OS cruft
+.DS_Store
