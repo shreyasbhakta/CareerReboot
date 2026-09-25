@@ -81,9 +81,18 @@ function parseEntryObject(lines, entry) {
 }
 
 /** Re-indents a freshly dumped single-item YAML sequence to match the file's
- *  2/4-space list style, as an array of lines (no trailing newline). */
+ *  2/4-space list style, as an array of lines (no trailing newline).
+ *
+ *  lineWidth MUST stay disabled (-1). js-yaml's default folding wraps a long
+ *  plain scalar (e.g. a long `notes:` field) across multiple lines indented
+ *  deeper than the surgical FIELD_LINE regex above expects (which assumes
+ *  the "no multi-line scalars" invariant this file's header comment
+ *  documents) — findEntries then mis-detects the entry's boundary and a
+ *  later add/update/delete corrupts a neighboring entry. One long note is
+ *  all it takes; a wide `lineWidth` doesn't reproduce it on short test data,
+ *  so keep this disabled rather than re-enable folding "for readability." */
 function dumpEntryLines(obj) {
-  const dumped = yaml.dump([obj], { lineWidth: 100, noRefs: true }).trimEnd();
+  const dumped = yaml.dump([obj], { lineWidth: -1, noRefs: true }).trimEnd();
   return dumped.split("\n").map((l) => `  ${l}`);
 }
 

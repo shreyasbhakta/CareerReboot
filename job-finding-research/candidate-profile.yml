@@ -1,0 +1,182 @@
+# Candidate profile for the "Job Finding Research" scoring engine.
+#
+# This is a USER LAYER file (edit freely, never overwritten by an update) — it
+# drives the deterministic fit-scoring in the /research tool, distinct from
+# career-ops's own config/profile.yml (which drives the LLM evaluation modes
+# like `oferta`/`auto-pipeline`). The two are allowed to diverge: this one is
+# tuned for fast, code-only keyword scoring, not narrative generation.
+
+location:
+  primary: ["new york", "nyc", "new york city", "brooklyn", "manhattan"]
+  secondary_signals: ["remote us", "remote-us", "remote - us", "united states", "usa", "us-based", " ny ", " ny,"]
+  open_to_relocation: true
+  # A location matching one of these (and NOT primary/secondary) is treated as
+  # a foreign hire, not a "not in my exact city" case — scored well below the
+  # open_to_relocation floor. "Open to relocation" means within the US;
+  # domestic/international sponsorship is a separate, unverified question the
+  # skill flags for human review rather than guesses at.
+  international_signals:
+    - india
+    - hyderabad
+    - bangalore
+    - bengaluru
+    - united kingdom
+    - " uk"
+    - london
+    - germany
+    - berlin
+    - munich
+    - france
+    - paris
+    - singapore
+    - "apac"
+    - "emea"
+    - japan
+    - tokyo
+    - china
+    - philippines
+    - poland
+    - ireland
+    - dublin
+    - netherlands
+    - amsterdam
+    - spain
+    - italy
+    - brazil
+    - mexico
+    - canada
+    - toronto
+    - australia
+    - sydney
+
+seniority:
+  # Titles containing these are a comfortable fit — no penalty.
+  target: ["software engineer", "backend engineer", "ai engineer", "applied ai engineer",
+           "agentic ai engineer", "forward deployed engineer", "forward-deployed engineer",
+           "platform engineer", "product engineer", "solutions engineer", "customer engineer",
+           "full stack engineer", "full-stack engineer"]
+  # Present but manageable stretch — mild penalty, never a hard reject.
+  stretch: ["senior software engineer", "senior ai engineer", "senior backend engineer",
+            "senior forward deployed engineer", "sr. software engineer", "sr software engineer"]
+  # Meaningfully above current level — larger penalty, flagged as STRETCH tier candidate.
+  strong_stretch: ["staff engineer", "principal engineer", "lead engineer", "engineering manager",
+                    "director of engineering", "vp of engineering", "head of engineering"]
+  # Clearly out of scope regardless of keyword overlap.
+  exclude: ["intern", "internship", "co-op", "student", "new grad bootcamp"]
+
+skills:
+  backend:
+    - java
+    - python
+    - spring boot
+    - node.js
+    - nodejs
+    - rest api
+    - microservices
+    - event-driven
+    - kafka
+    - redis
+    - postgresql
+    - postgres
+    - mongodb
+    - sql
+    - distributed systems
+  ai:
+    - langchain
+    - langgraph
+    - rag
+    - retrieval augmented generation
+    - llm
+    - large language model
+    - mcp
+    - model context protocol
+    - openai api
+    - faiss
+    - pinecone
+    - prompt engineering
+    - multi-agent
+    - agent orchestration
+    - human-in-the-loop
+    - agentic
+    - tool use
+    - tool calling
+    - function calling
+  infra:
+    - aws
+    - docker
+    - kubernetes
+    - jenkins
+    - ci/cd
+    - prometheus
+    - grafana
+  client_facing:
+    - technical discovery
+    - solution architecture
+    - solutions architecture
+    - requirements gathering
+    - production deployment
+    - stakeholder
+    - cross-functional
+    - customer environments
+    - enterprise integrations
+    - implementation
+
+signals:
+  production:
+    - production
+    - reliability
+    - on-call
+    - oncall
+    - sla
+    - observability
+    - scale
+    - deploy
+    - deployment
+    - infrastructure
+    - end-to-end ownership
+    - own the roadmap
+  fde:
+    - forward deployed
+    - forward-deployed
+    - customer-facing engineer
+    - solutions engineer
+    - customer engineer
+    - deployment engineer
+    - implementation engineer
+    - travel to customer
+    - onsite with customers
+    - embedded with customers
+  domain:
+    - fintech
+    - payments
+    - payment infrastructure
+    - financial technology
+    - banking
+    - mobility
+    - enterprise saas
+  ai_native:
+    - ai agent
+    - ai agents
+    - autonomous agent
+    - agent memory
+    - agent runtime
+    - ai automation
+    - foundation model
+
+# Weights must sum to 100 — see job-finding-research/SKILL.md section "Fit
+# Scoring" for the full-strength (LLM-assisted) version of this rubric. This
+# is the cheap, deterministic pre-filter that runs before any LLM is involved.
+weights:
+  technical: 30
+  production: 20
+  fde_domain: 20
+  seniority: 15
+  location: 10
+  freshness: 5
+
+tiers:
+  apply_today_min: 88
+  recruiter_outreach_min: 80
+  watch_min: 70
+  stretch_min: 60
+  # below stretch_min = SKIP
