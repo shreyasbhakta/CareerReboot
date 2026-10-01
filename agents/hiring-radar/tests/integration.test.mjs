@@ -341,3 +341,15 @@ test('CLI --check-config validates an override file', () => {
   assert.equal(r.status, 2);
   assert.match(r.stderr, /min_score/);
 });
+
+test('set-status --all resets every row (TSV and JSON)', async () => {
+  const { setAllStatus, setStatus } = await import('../set-status.mjs');
+  const deps = base({ collectors: { 'web-search': fakeSearch([post(1, "We're hiring a backend engineer. Java. New York."), post(2, "I'm hiring an AI engineer. RAG. New York.")]) } });
+  await runScan(opts({ sources: ['web-search'] }), deps);
+  const id = JSON.parse(readFileSync(join(deps.dataDir, 'hiring-signals.json'), 'utf8')).signals[0].id;
+  setStatus(deps.dataDir, id, 'DISMISSED');
+  assert.equal(setAllStatus(deps.dataDir, 'NEW'), 2);
+  const rows = readFileSync(join(deps.dataDir, 'hiring-signals.tsv'), 'utf8').trim().split('\n').slice(1);
+  assert.ok(rows.every((r) => r.split('\t')[19] === 'NEW'));
+  assert.ok(JSON.parse(readFileSync(join(deps.dataDir, 'hiring-signals.json'), 'utf8')).signals.every((s) => s.status === 'NEW'));
+});

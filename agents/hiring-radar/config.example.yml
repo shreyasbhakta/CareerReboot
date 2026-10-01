@@ -254,7 +254,7 @@ enrichment:
 llm:
   enabled: auto                 # auto = on only when MODEL_PROVIDER is set (+ a key); true/false to force
   providers: [openai, anthropic, gemini]   # fallback order; MODEL_PROVIDER moves one to the front
-  default_models: { openai: "gpt-4o-mini", anthropic: "claude-haiku-4-5-20251001", gemini: "gemini-2.0-flash" }
+  default_models: { openai: "gpt-4o-mini", anthropic: "claude-haiku-4-5-20251001", gemini: "gemini-flash-latest" }
   max_calls: 25
   timeout_ms: 25000
   retries: 1

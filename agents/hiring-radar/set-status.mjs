@@ -7,6 +7,22 @@ import { getCareerOpsRoot } from '../career-ops/path-resolver.mjs';
 import { loadHistory, writeHistory } from './storage/history.mjs';
 import { STATUSES } from './storage/normalize.mjs';
 
+/** Set every row's status at once (e.g. reset the ledger to NEW). Returns the row count. */
+export function setAllStatus(dataDir, status) {
+  if (!STATUSES.includes(status)) throw new Error(`status must be one of ${STATUSES.join(', ')}`);
+  const tsv = join(dataDir, 'hiring-signals.tsv');
+  const { signals } = loadHistory(tsv);
+  for (const s of signals) s.status = status;
+  writeHistory(tsv, signals);
+  const jf = join(dataDir, 'hiring-signals.json');
+  if (existsSync(jf)) {
+    const j = JSON.parse(readFileSync(jf, 'utf8'));
+    for (const s of j.signals || []) s.status = status;
+    writeFileSync(jf, JSON.stringify(j, null, 2) + '\n', { mode: 0o600 });
+  }
+  return signals.length;
+}
+
 export function setStatus(dataDir, id, status) {
   if (!STATUSES.includes(status)) throw new Error(`status must be one of ${STATUSES.join(', ')}`);
   const tsv = join(dataDir, 'hiring-signals.tsv');
@@ -25,6 +41,11 @@ export function setStatus(dataDir, id, status) {
 
 if (process.argv[1] && resolve(process.argv[1]) === resolve(import.meta.filename)) {
   const [id, status] = process.argv.slice(2);
+  if (id === '--all') {
+    const dir = process.env.HIRING_RADAR_DATA_DIR ? resolve(process.env.HIRING_RADAR_DATA_DIR) : join(getCareerOpsRoot(), 'data');
+    try { console.log(`OK ${setAllStatus(dir, status)} rows`); } catch (e) { console.error(e.message); process.exit(1); }
+    process.exit(0);
+  }
   const dataDir = process.env.HIRING_RADAR_DATA_DIR ? resolve(process.env.HIRING_RADAR_DATA_DIR) : join(getCareerOpsRoot(), 'data');
   try { setStatus(dataDir, id, status); console.log('OK'); } catch (e) { console.error(e.message); process.exit(1); }
 }
