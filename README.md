@@ -29,6 +29,7 @@ clicking submit at every step. Nothing is ever auto-submitted or auto-sent.
   tracker.
 - **Dashboard** — a local web UI (pipeline board, CV editor, analytics) that
   reads and writes the same files as the CLI.
+- **Hiring Radar** — a daily scan for *who is hiring right now*: HN "Who is hiring?" posts, fresh ATS postings, optional search-engine discovery of hiring posts, scored with an explainable breakdown, matched against your LinkedIn export for warm intros. Discovery only; nothing is sent.
 - **Sponsorship lookup** — checks a company's H-1B/PERM filing history
   against a local DOL data index, entirely offline.
 
@@ -38,6 +39,7 @@ clicking submit at every step. Nothing is ever auto-submitted or auto-sent.
 |---|---|
 | [`agents/career-ops/`](agents/career-ops/) | The core pipeline: scan, evaluate, tailor, apply-prep, track, follow-up. |
 | [`agents/career-ops/web/`](agents/career-ops/web/) | The local web dashboard, backed by the same data files as the CLI. |
+| [`agents/hiring-radar/`](agents/hiring-radar/) | Daily active-hiring intelligence: signals, people, warm intros, digest. Design: [`docs/architecture/hiring-radar.md`](docs/architecture/hiring-radar.md). |
 | [`agents/outreach/`](agents/outreach/) | Cold email, LinkedIn, and follow-up drafting. |
 | [`agents/linkedin-radar/`](agents/linkedin-radar/) | Drafts LinkedIn posts grounded in your own CV, from public tech-discussion sources. |
 | [`skills/resume-skills/`](skills/resume-skills/) | A library of resume, cover-letter, and interview-prep prompt skills. |
@@ -53,6 +55,17 @@ cp config/profile.example.yml config/profile.yml   # your targeting criteria
 # drop your resume into cv.md, then:
 node scan.mjs
 ```
+
+**Hiring Radar:**
+
+```bash
+npm run setup                  # repo root
+npm run hiring-radar:dry-run   # preview, writes nothing
+npm run hiring-radar           # digest -> agents/career-ops/data/hiring-radar.md
+npm test                       # hiring-radar tests
+```
+
+See [`agents/hiring-radar/README.md`](agents/hiring-radar/README.md).
 
 **Web dashboard:**
 
