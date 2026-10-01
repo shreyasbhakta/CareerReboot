@@ -38,8 +38,8 @@ import { collector as webSearch } from './collectors/web-search.mjs';
 import { collector as hn } from './collectors/hn.mjs';
 import { collector as jobs } from './collectors/jobs.mjs';
 
-const KNOWN_FLAGS = ['--dry-run', '--days', '--limit', '--source', '--min-score', '--verbose', '--fixture', '--no-llm', '--help', '-h'];
-const VALUE_FLAGS = ['--days', '--limit', '--source', '--min-score', '--fixture'];
+const KNOWN_FLAGS = ['--check-config', '--dry-run', '--days', '--limit', '--source', '--min-score', '--verbose', '--fixture', '--no-llm', '--help', '-h'];
+const VALUE_FLAGS = ['--check-config', '--days', '--limit', '--source', '--min-score', '--fixture'];
 const USAGE = `Usage: node agents/hiring-radar/scan.mjs [options]
 
   --dry-run          Discover, score and print; write nothing
@@ -49,6 +49,7 @@ const USAGE = `Usage: node agents/hiring-radar/scan.mjs [options]
   --min-score <0-100> Report floor (default from config)
   --fixture <file>   Process a JSON file of posts instead of live sources
   --no-llm           Never call a model provider
+  --check-config <file>  Validate a YAML override file and exit (0 ok, 2 invalid)
   --verbose          Debug logging
   -h, --help         This message`;
 
@@ -74,6 +75,7 @@ export function parseArgs(argv) {
     limit: num('--limit'),
     minScore: num('--min-score'),
     fixture: flagValue(argv, '--fixture'),
+    checkConfig: flagValue(argv, '--check-config'),
     sources,
   };
 }
@@ -342,6 +344,10 @@ async function main() {
   const argv = process.argv.slice(2);
   const opts = parseArgs(argv);
   loadDotEnv([join(CAREER_OPS_DIR, '.env'), join(ROOT, '.env')]);
+  if (opts.checkConfig) {
+    try { loadConfig({ localPath: resolve(opts.checkConfig) }); console.log('OK'); return; }
+    catch (e) { console.error(e.message); process.exit(2); }
+  }
   const logger = createLogger({ verbose: opts.verbose });
   let res;
   try {

@@ -298,3 +298,25 @@ test('CLI never prints secrets from the environment', () => {
   const r = cli(['--fixture', join(ROOT, 'tests/fixtures/posts.json'), '--dry-run', '--verbose'], { OPENAI_API_KEY: secret, HIRING_RADAR_DATA_DIR: dataDir() });
   assert.ok(!(r.stdout + r.stderr).includes(secret));
 });
+
+test('set-status updates ledger and JSON, rejects bad input', async () => {
+  const { setStatus } = await import('../set-status.mjs');
+  const deps = base({ collectors: { 'web-search': fakeSearch([post(1, "We're hiring a backend engineer. Java. New York.")]) } });
+  await runScan(opts({ sources: ['web-search'] }), deps);
+  const json = JSON.parse(readFileSync(join(deps.dataDir, 'hiring-signals.json'), 'utf8'));
+  const id = json.signals[0].id;
+  setStatus(deps.dataDir, id, 'CONTACTED');
+  assert.equal(JSON.parse(readFileSync(join(deps.dataDir, 'hiring-signals.json'), 'utf8')).signals[0].status, 'CONTACTED');
+  assert.equal(readFileSync(join(deps.dataDir, 'hiring-signals.tsv'), 'utf8').split('\n')[1].split('\t')[19], 'CONTACTED');
+  assert.throws(() => setStatus(deps.dataDir, id, 'BOGUS'), /status must be/);
+  assert.throws(() => setStatus(deps.dataDir, 'nope', 'SEEN'), /no signal/);
+});
+test('CLI --check-config validates an override file', () => {
+  const dir = dataDir();
+  const good = join(dir, 'g.yml'); writeFileSync(good, 'recency:\n  default_days: 5\n');
+  const bad = join(dir, 'b.yml'); writeFileSync(bad, 'scoring:\n  min_score: 999\n');
+  assert.equal(cli(['--check-config', good]).status, 0);
+  const r = cli(['--check-config', bad]);
+  assert.equal(r.status, 2);
+  assert.match(r.stderr, /min_score/);
+});
