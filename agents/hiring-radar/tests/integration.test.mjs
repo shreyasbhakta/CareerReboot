@@ -140,6 +140,9 @@ test('LLM failure never fails the scan', async () => {
 // ---- collectors -----------------------------------------------------------------
 test('query generation is config-driven, capped, unique, and covers each target role', () => {
   const c = cfg();
+  assert.equal(c.sources.web_search.max_queries, 8, 'default keeps API usage minimal');
+  assert.equal(generateQueries(c).length, 8);
+  c.sources.web_search.max_queries = 40;
   const q = generateQueries(c);
   assert.ok(q.length <= c.sources.web_search.max_queries);
   assert.equal(new Set(q).size, q.length);
@@ -165,6 +168,21 @@ test('web search: falls back to the next provider and caches results', async () 
   const before = urls.length;
   await webSearch.discover({ cfg: c, env, http, logger: silentLogger, days: 7, cache });
   assert.equal(urls.length, before, 'second pass is fully cached');
+});
+test('web search: an EMPTY answer falls through to the next provider and empties are not cached', async () => {
+  const c = cfg();
+  c.sources.web_search.max_queries = 1;
+  const store = new Map();
+  const cache = { get: (k) => store.get(k), set: (k, v) => store.set(k, v) };
+  const hit = { url: 'https://linkedin.com/posts/a', title: 'T', description: 'D' };
+  const http = { getJson: async (url) => (url.includes('brave') ? { web: { results: [] } } : { results: [{ url: hit.url, title: 'T', content: 'D' }] }) };
+  const env = { SEARXNG_URL: 'http://searx', BRAVE_SEARCH_API_KEY: 'k'.repeat(20) };
+  const r = await webSearch.discover({ cfg: c, env, http, logger: silentLogger, days: 7, cache });
+  assert.equal(r.raw.length, 1, 'brave was empty -> searxng answered');
+  const empty = { getJson: async () => ({ web: { results: [] }, results: [] }) };
+  const store2 = new Map();
+  await webSearch.discover({ cfg: c, env, http: empty, logger: silentLogger, days: 7, cache: { get: (k) => store2.get(k), set: (k, v) => store2.set(k, v) } });
+  assert.equal(store2.size, 0, 'empty results are never cached');
 });
 test('web search: every query failing marks the source failed', async () => {
   const c = cfg();

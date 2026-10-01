@@ -155,6 +155,7 @@ recency:
   default_days: 7
   max_days: 30
   unknown_age_score: 30        # postings that expose no date (many ATS boards)
+  allow_undated_web_jobs: false  # search-engine job-page hits without a date are dropped (ATS API jobs are kept)
   allow_undated_posts: false   # search/social posts without a parseable date are dropped (jobs are kept)
   # first band whose max_hours >= age wins; older than the last band -> floor_score
   bands:
@@ -219,12 +220,12 @@ sources:
       - { name: Mistral AI, careers_url: "https://jobs.lever.co/mistral" }
   web_search:
     enabled: true
-    # Providers are tried in order; the first configured one is used, others are fallbacks.
+    # Providers are tried in order; the first configured one is used, others are fallbacks (also when one returns nothing).
     # searxng -> SEARXNG_URL (see ../career-ops/deploy/searxng); brave -> BRAVE_SEARCH_API_KEY
-    providers: [searxng, brave]
-    max_queries: 24
+    providers: [brave, searxng]
+    max_queries: 8           # each query is one paid-API request; raise deliberately
     results_per_query: 10
-    cache_hours: 12
+    cache_hours: 22
     # Queries are generated from roles x phrases x skills; these are the templates.
     phrases: ["hiring", "we're hiring", "I'm hiring", "join our team", "looking for"]
     location_terms: ["New York", "remote"]

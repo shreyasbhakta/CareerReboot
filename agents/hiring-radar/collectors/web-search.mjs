@@ -22,24 +22,28 @@ export function generateQueries(cfg) {
   const add = (s) => { const t = s.replace(/\s+/g, ' ').trim(); if (t && !q.includes(t)) q.push(t); };
   const [firstLoc] = ws.location_terms;
 
-  // 1. Direct first-person / team phrases per target role.
+  // Priority order — the list is capped at max_queries (default 8) to keep paid-API usage minimal.
+  // 1. One plain query per target role.
   for (const L of labels) add(`"${L}" hiring`);
-  for (const L of labels) add(`"I'm hiring" "${L}"`);
-  for (const L of labels) add(`"we're hiring" "${L}" ${firstLoc}`);
-  // 4. Site-scoped variants (LinkedIn posts etc.) for the most important phrasings.
-  for (const site of ws.site_hints) {
-    add(`site:${site} "I'm hiring" "${backendLabel}"`);
-    add(`site:${site} "we're hiring" "${aiLabel}"`);
+  // 2. Site-scoped first-person / team phrasing where hiring posts actually live.
+  const [firstSite] = ws.site_hints;
+  if (firstSite) {
+    add(`site:${firstSite} "I'm hiring" "${backendLabel}"`);
+    add(`site:${firstSite} "we're hiring" "${aiLabel}"`);
   }
-  // 2. Role x skill pairs (the skill picks the family via its group).
+  // 3. First-person per role, then role x skill pairs, then the rest.
+  for (const L of labels) add(`"I'm hiring" "${L}"`);
   for (const pair of ws.skill_pairs) {
     const fam = groupOf(pair) === 'ai' ? aiLabel : backendLabel;
     add(`"${fam}" hiring ${pair}`);
   }
-  // 3. Generic team-expansion language.
+  for (const L of labels) add(`"we're hiring" "${L}" ${firstLoc}`);
   add(`"join our engineering team" AI`);
-  add(`"we're hiring" engineer ${firstLoc}`);
   add(`"building out the engineering team" ${aiLabel}`);
+  for (const site of ws.site_hints.slice(1)) {
+    add(`site:${site} "I'm hiring" "${backendLabel}"`);
+    add(`site:${site} "we're hiring" "${aiLabel}"`);
+  }
   // 5. Remaining phrase x role x location combinations.
   for (const loc of ws.location_terms.slice(1)) for (const L of labels) add(`"hiring" "${L}" ${loc}`);
   for (const phrase of ws.phrases) for (const L of labels) add(`"${phrase}" "${L}"`);
@@ -85,6 +89,7 @@ export const collector = {
     logger.info(`Source: web-search — providers: ${available.join(',')} — Queries: ${queries.length}`);
     const raw = [];
     const errors = [];
+    const used = {};
     let okQueries = 0;
     let consecutiveFails = 0;
     for (const query of queries) {
@@ -96,8 +101,12 @@ export const collector = {
         let lastErr;
         for (const name of available) {
           try {
-            results = await engines[name].search(http, env, query, { days, count: ws.results_per_query });
-            cache?.set(cacheKey, results);
+            used[name] = (used[name] || 0) + 1;
+            const r = await engines[name].search(http, env, query, { days, count: ws.results_per_query });
+            // An empty answer usually means the engine is rate-limited/suspended (SearXNG's scraped
+            // upstreams do this after a burst), so try the next provider before accepting "nothing".
+            if (!r.length && name !== available[available.length - 1]) { logger.debug(`search ${name} returned nothing for "${query}"; trying next provider`); results = r; continue; }
+            results = r;
             lastErr = null;
             break;
           } catch (e) {
@@ -105,6 +114,7 @@ export const collector = {
             logger.debug(`search ${name} failed for "${query}": ${e.message}`);
           }
         }
+        if (results?.length) cache?.set(cacheKey, results);
         if (lastErr) { errors.push(`query "${query}": ${lastErr.message}`); consecutiveFails++; continue; }
         consecutiveFails = 0;
       }
@@ -113,7 +123,8 @@ export const collector = {
     }
     // If every single query failed, the source failed; partial failure is just reported.
     if (okQueries === 0 && queries.length) throw new Error(`search backend unreachable: ${errors.length} failed queries (${errors[0]})`);
-    return { raw, errors, queries: queries.length };
+    logger.info(`web-search requests: ${Object.entries(used).map(([k, v]) => `${k}=${v}`).join(' ') || 'none (all cached)'}`);
+    return { raw, errors, queries: queries.length, providerRequests: used };
   },
 
   /** Raw search hit -> candidate. Host allow-list keeps noise out. */

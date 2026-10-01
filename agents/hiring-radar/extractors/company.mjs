@@ -70,8 +70,10 @@ export function companyFromJobTitle(title) {
   if (m && !SITE_WORDS.test(m[1])) return m[1].trim();
   const parts = t.split(/\s+[-–|]\s+/).map((x) => x.trim()).filter(Boolean);
   if (parts.length >= 2) {
-    const last = parts[parts.length - 1];
-    if (last.length >= 2 && last.length <= 40 && !SITE_WORDS.test(last) && !/\b(engineer|developer|manager|remote|ii|iii|senior)\b/i.test(last)) return last;
+    const last = parts[parts.length - 1].replace(/\s+(careers|jobs)$/i, '').replace(/\s*[•·].*$/, '').trim();
+    // A tail that is a skill list, role phrase or location is not an employer.
+    const notEmployer = /[,&/]|\b(engineer|engineering|developer|manager|remote|hybrid|ii|iii|senior|java|kotlin|python|spring|boot|rag|llm|ai|systems|agentic|full[- ]?time|contract|apply|usa|us|new york)\b/i;
+    if (last.length >= 3 && last.length <= 40 && !SITE_WORDS.test(last) && !notEmployer.test(last)) return last;
   }
   return '';
 }

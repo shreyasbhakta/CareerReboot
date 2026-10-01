@@ -88,3 +88,10 @@ test('regression: a job title is never read as a person ("Forward Deployed Engin
   // and a profile-shaped title on a non-profile URL is not trusted
   assert.equal(personFromResult({ title: 'Jane Doe - CTO - Acme | LinkedIn', snippet: '', url: 'https://example.com/team' }), null);
 });
+
+test('company-from-title rejects skill lists, roles and locations; strips Careers suffix', () => {
+  assert.equal(companyFromJobTitle('Backend Engineer - Java, Kotlin, Spring Boot'), '');
+  assert.equal(companyFromJobTitle('AI Engineer - Agentic Systems & RAG'), '');
+  assert.equal(companyFromJobTitle('Backend Engineer - Hitachi Careers'), 'Hitachi');
+  assert.equal(companyFromJobTitle('Backend Engineer - Pinwheel • New York City'), 'Pinwheel');
+});

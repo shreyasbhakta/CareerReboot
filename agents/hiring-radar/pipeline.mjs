@@ -26,6 +26,8 @@ export function buildSignal(c, ctx) {
   const hours = published ? Math.max(0, (now - published) / 36e5) : null;
   if (hours != null && hours > days * 24) return drop('stale');
   if (hours == null && c.kind === 'post' && !cfg.recency.allow_undated_posts) return drop('undated-post');
+  // Search-engine job hits with no date and no structured company are the noisiest input; the ATS-API source covers real jobs reliably.
+  if (hours == null && c.source === 'web-search' && c.kind === 'job' && !cfg.recency.allow_undated_web_jobs) return drop('undated-web-job');
 
   // ---- role ----
   const headerText = c.kind === 'hn' ? c.title : c.kind === 'job' ? c.title : `${c.title}\n${c.snippet || ''}`;

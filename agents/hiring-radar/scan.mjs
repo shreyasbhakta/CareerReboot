@@ -123,7 +123,8 @@ export async function runScan(opts = {}, deps = {}) {
     timeoutMs: hc.timeout_ms, retries: hc.retries, baseDelayMs: hc.base_delay_ms, maxDelayMs: hc.max_delay_ms,
     maxConcurrency: hc.max_concurrency, perHostIntervalMs: hc.per_host_interval_ms, fetchImpl: deps.fetchImpl, sleep: deps.sleep, stats,
   });
-  const cache = createCache({ dir: paths.cache, ttlHours: cfg.sources.web_search.cache_hours, readOnly: opts.dryRun });
+  // Search cache is written even on --dry-run: it holds only public search responses, and it is what keeps repeat runs from re-spending API requests.
+  const cache = createCache({ dir: paths.cache, ttlHours: cfg.sources.web_search.cache_hours });
   const llm = createLlm({
     cfg: opts.noLlm ? { ...cfg, llm: { ...cfg.llm, enabled: false } } : cfg, env, logger,
     cachePath: join(paths.cache, 'hiring-radar-llm.json'), readOnlyCache: opts.dryRun, fetchImpl: deps.fetchImpl, sleep: deps.sleep,
