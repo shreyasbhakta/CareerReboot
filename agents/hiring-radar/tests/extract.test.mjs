@@ -66,3 +66,25 @@ import { stripHtml } from '../lib/text.mjs';
 test('stripHtml decodes numeric/hex entities (HN uses &#x2F;)', () => {
   assert.equal(stripHtml('https:&#x2F;&#x2F;a.co&#x2F;x &amp; it&#39;s <p>ok'), "https://a.co/x & it's \nok");
 });
+
+import { companyFromJobTitle } from '../extractors/company.mjs';
+test('company from job-page titles', () => {
+  assert.equal(companyFromJobTitle('Backend Engineer (Java) - Benifex'), 'Benifex');
+  assert.equal(companyFromJobTitle('Unusual Ventures hiring AI Engineer'), 'Unusual Ventures');
+  assert.equal(companyFromJobTitle('Remote Senior Backend Engineer (Python/FastAPI) at Turing'), 'Turing');
+  assert.equal(companyFromJobTitle('Senior AI Engineer - LLM & Machine Learning - InventYOU AB'), 'InventYOU AB');
+  assert.equal(companyFromJobTitle('Backend Engineer - Remote'), '');
+  assert.equal(companyFromJobTitle('Software Engineer | LinkedIn'), '');
+});
+
+test('regression: a job title is never read as a person ("Forward Deployed Engineer - Built In NYC")', () => {
+  for (const t of ['Forward Deployed Engineer - Built In NYC', 'Senior AI Engineer - Acme', 'Backend Engineer - Remote', 'Software Engineer II - Stripe | LinkedIn']) {
+    assert.equal(isPlausibleName(t.split(' - ')[0]), false, t);
+    assert.equal(personFromResult({ title: t, snippet: '', url: 'https://builtin.com/job/x' }), null, t);
+    assert.equal(parseProfileTitle(t), null, t);
+  }
+  // but a genuine LinkedIn profile result still works
+  assert.equal(personFromResult({ title: 'Jane Doe - CTO - Acme | LinkedIn', snippet: '', url: 'https://www.linkedin.com/in/janedoe' }).name, 'Jane Doe');
+  // and a profile-shaped title on a non-profile URL is not trusted
+  assert.equal(personFromResult({ title: 'Jane Doe - CTO - Acme | LinkedIn', snippet: '', url: 'https://example.com/team' }), null);
+});

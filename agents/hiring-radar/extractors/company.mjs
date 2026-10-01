@@ -56,3 +56,22 @@ export function resolveCompany({ structured, url, title, text }) {
   if (structured) return { name: structured, confidence: 'HIGH', source: 'structured' };
   return companyFromAtsUrl(url) || companyFromText(title) || companyFromText(text) || { name: '', confidence: 'LOW', source: 'unknown' };
 }
+
+const SITE_WORDS = /^(linkedin|indeed|glassdoor|ziprecruiter|workable|lever|greenhouse|ashby|wellfound|builtin|built in|jobs?|careers?|apply|remote|hybrid|onsite|new york|nyc)\b/i;
+/**
+ * Job-page titles come as "Role - Company", "Role at Company", "Company hiring Role",
+ * "Role | Company | LinkedIn". Returns a company name or '' — never a guess from the domain.
+ */
+export function companyFromJobTitle(title) {
+  const t = String(title || '').replace(/\s*[|\-–]\s*(LinkedIn|Indeed|Glassdoor|Workable|Lever|Greenhouse|Built In( NYC)?)\s*$/i, '').trim();
+  let m = t.match(/^(.{2,50}?)\s+hiring\s+/i);
+  if (m && !SITE_WORDS.test(m[1])) return m[1].trim();
+  m = t.match(/\s+at\s+([A-Z][^|\-–(),]{1,45}?)\s*(?:[|\-–(]|$)/);
+  if (m && !SITE_WORDS.test(m[1])) return m[1].trim();
+  const parts = t.split(/\s+[-–|]\s+/).map((x) => x.trim()).filter(Boolean);
+  if (parts.length >= 2) {
+    const last = parts[parts.length - 1];
+    if (last.length >= 2 && last.length <= 40 && !SITE_WORDS.test(last) && !/\b(engineer|developer|manager|remote|ii|iii|senior)\b/i.test(last)) return last;
+  }
+  return '';
+}

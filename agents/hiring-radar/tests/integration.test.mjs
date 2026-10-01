@@ -176,6 +176,9 @@ test('web search normalize keeps allowed hosts only and tags job pages', () => {
   assert.equal(webSearch.normalize({ url: 'https://spam.example/x', title: 't' }, { cfg: c }), null);
   assert.equal(webSearch.normalize({ url: 'https://jobs.lever.co/acme/1', title: 't', snippet: 's' }, { cfg: c }).kind, 'job');
   assert.equal(webSearch.normalize({ url: 'https://www.linkedin.com/posts/a', title: 't', snippet: 's' }, { cfg: c }).kind, 'post');
+  assert.equal(webSearch.normalize({ url: 'https://careers.benifex.com/j/1', title: 'Backend Engineer - Benifex', snippet: 's' }, { cfg: c }).companyName, 'Benifex', 'careers.* hosts are accepted');
+  assert.equal(webSearch.normalize({ url: 'https://www.indeed.com/q-backend-jobs.html', title: 'Now Hiring: 100 Forward Deployed Engineer Jobs in Manhattan Beach, CA', snippet: 'Browse 189 jobs' }, { cfg: c }), null, 'aggregator listing pages are dropped');
+  assert.equal(webSearch.normalize({ url: 'https://jobs.lever.co/acme/1', title: '1,727 Remote Backend Developer job openings', snippet: 's' }, { cfg: c }), null);
 });
 test('HN normalize parses header, company, and date; skips non-engineering', () => {
   const c = hn.normalize({ id: 7, author: 'founder1', createdAt: '2026-10-01T08:00:00Z', html: 'Acme Corp | Backend Engineer | New York, NY | REMOTE<p>We use Java &amp; Kafka. <a href="https://acme.example/jobs">apply</a>' });

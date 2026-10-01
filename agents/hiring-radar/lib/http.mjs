@@ -56,7 +56,7 @@ export function createHttp({
       stats.requests++;
       const res = await fetchImpl(url, {
         ...init,
-        headers: { 'user-agent': userAgent, accept: 'application/json, text/plain, */*', ...(init.headers || {}) },
+        headers: { 'user-agent': userAgent, accept: '*/*', ...(init.headers || {}) },
         signal: ctl.signal,
       });
       if (!res.ok) {
@@ -102,10 +102,11 @@ export function createHttp({
 
   return {
     stats,
-    getJson: (url, init) => request(url, { method: 'GET', ...init }, 'json'),
+    // Brave rejects multi-value Accept headers (HTTP 422), so send exactly one.
+    getJson: (url, init = {}) => request(url, { method: 'GET', ...init, headers: { accept: 'application/json', ...(init.headers || {}) } }, 'json'),
     getText: (url, init) => request(url, { method: 'GET', ...init }, 'text'),
     postJson: (url, body, init = {}) =>
-      request(url, { method: 'POST', body: JSON.stringify(body), ...init, headers: { 'content-type': 'application/json', ...(init.headers || {}) } }, 'json'),
+      request(url, { method: 'POST', body: JSON.stringify(body), ...init, headers: { accept: 'application/json', 'content-type': 'application/json', ...(init.headers || {}) } }, 'json'),
   };
 }
 

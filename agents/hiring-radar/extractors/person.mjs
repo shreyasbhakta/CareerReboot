@@ -3,7 +3,7 @@
 // an explicit "Hiring Manager: X" line) and passes plausibility checks.
 
 const NAME_TOKEN = /^[A-Z][a-zA-Z'’.-]{1,24}$/;
-const NOT_NAMES = new Set(['team', 'hiring', 'careers', 'jobs', 'engineering', 'recruiting', 'talent', 'company', 'linkedin', 'the', 'we', 'our', 'apply', 'join', 'staff', 'admin', 'support', 'hr', 'people', 'ai', 'labs', 'lab', 'inc', 'llc', 'ltd', 'technologies', 'software', 'systems', 'group', 'capital', 'bank', 'cloud', 'data', 'solutions', 'ventures', 'studio', 'studios', 'health', 'robotics', 'security', 'network', 'networks', 'platform', 'works']);
+const NOT_NAMES = new Set(['team', 'hiring', 'careers', 'jobs', 'engineering', 'recruiting', 'talent', 'company', 'linkedin', 'the', 'we', 'our', 'apply', 'join', 'staff', 'admin', 'support', 'hr', 'people', 'ai', 'labs', 'lab', 'inc', 'llc', 'ltd', 'technologies', 'software', 'systems', 'group', 'capital', 'bank', 'cloud', 'data', 'solutions', 'ventures', 'studio', 'studios', 'health', 'robotics', 'security', 'network', 'networks', 'platform', 'works', 'engineer', 'engineers', 'developer', 'developers', 'manager', 'director', 'senior', 'junior', 'software', 'backend', 'frontend', 'forward', 'deployed', 'deployment', 'analyst', 'scientist', 'lead', 'head', 'vp', 'president', 'remote', 'hybrid', 'jobs', 'job', 'hire', 'hires', 'new', 'york', 'city', 'nyc', 'now', 'intern', 'full', 'stack', 'fullstack', 'machine', 'learning', 'product', 'customer', 'technical', 'principal', 'built', 'in', 'at', 'for', 'and', 'of', 'to', 'a']);
 
 export function isPlausibleName(name) {
   if (!name) return false;
@@ -67,7 +67,9 @@ export function personFromResult({ title, snippet, url, firstPerson }) {
   const profileUrl = cleanLinkedInProfileUrl(url);
 
   if (named) return { name: named.name, title: named.title, url: null, source: 'text', confidence: 'HIGH' };
-  if (profile) {
+  if (profile && profileUrl) {
+    // Only a real linkedin.com/in/ profile result can attribute a person; an arbitrary
+    // "Role - Company" page title must never be read as "Name - Title".
     // A profile page itself is not a hiring act; association is inferred -> MEDIUM.
     return { name: profile.name, title: profile.title, url: profileUrl, source: 'profile', confidence: 'MEDIUM', company: profile.company };
   }

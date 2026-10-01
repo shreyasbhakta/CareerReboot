@@ -2,6 +2,7 @@
 // phrases and skills; the engine adapter (SearXNG / Brave) is isolated so
 // adding another provider is one function.
 import { termRegex } from '../lib/text.mjs';
+import { companyFromJobTitle } from '../extractors/company.mjs';
 
 const GROUP_OF_TERM = (cfg) => {
   const map = [];
@@ -25,6 +26,11 @@ export function generateQueries(cfg) {
   for (const L of labels) add(`"${L}" hiring`);
   for (const L of labels) add(`"I'm hiring" "${L}"`);
   for (const L of labels) add(`"we're hiring" "${L}" ${firstLoc}`);
+  // 4. Site-scoped variants (LinkedIn posts etc.) for the most important phrasings.
+  for (const site of ws.site_hints) {
+    add(`site:${site} "I'm hiring" "${backendLabel}"`);
+    add(`site:${site} "we're hiring" "${aiLabel}"`);
+  }
   // 2. Role x skill pairs (the skill picks the family via its group).
   for (const pair of ws.skill_pairs) {
     const fam = groupOf(pair) === 'ai' ? aiLabel : backendLabel;
@@ -34,11 +40,6 @@ export function generateQueries(cfg) {
   add(`"join our engineering team" AI`);
   add(`"we're hiring" engineer ${firstLoc}`);
   add(`"building out the engineering team" ${aiLabel}`);
-  // 4. Site-scoped variants (LinkedIn posts etc.) for the most important phrasings.
-  for (const site of ws.site_hints) {
-    add(`site:${site} "I'm hiring" "${backendLabel}"`);
-    add(`site:${site} "we're hiring" "${aiLabel}"`);
-  }
   // 5. Remaining phrase x role x location combinations.
   for (const loc of ws.location_terms.slice(1)) for (const L of labels) add(`"hiring" "${L}" ${loc}`);
   for (const phrase of ws.phrases) for (const L of labels) add(`"${phrase}" "${L}"`);
@@ -120,8 +121,13 @@ export const collector = {
     let host = '';
     try { host = new URL(r.url).hostname.replace(/^www\./, '').toLowerCase(); } catch { return null; }
     const allowed = cfg.sources.web_search.allowed_hosts;
-    if (!allowed.some((h) => host === h || host.endsWith(`.${h}`))) return null;
-    const isJob = /\/jobs\/view\/|greenhouse\.io|lever\.co|ashbyhq\.com|workable\.com|wellfound\.com\/jobs|wellfound\.com\/company|ziprecruiter|indeed\.com/.test(r.url);
+    const prefixes = cfg.sources.web_search.allowed_host_prefixes || [];
+    if (!allowed.some((h) => host === h || host.endsWith(`.${h}`)) && !prefixes.some((p) => host.startsWith(p))) return null;
+    // Listing / SEO pages ("Browse 189 jobs in Manhattan Beach") describe no single opening.
+    const dropRes = (cfg.sources.web_search.drop_title_patterns || []).map((p) => new RegExp(p, 'i'));
+    if (dropRes.some((re) => re.test(r.title || '')) || /^browse\s/i.test(r.snippet || '')) return null;
+    const company = companyFromJobTitle(r.title);
+    const isJob = /^(careers|jobs|apply)\./.test(host) || /\/jobs\/view\/|builtin|greenhouse\.io|lever\.co|ashbyhq\.com|workable\.com|wellfound\.com\/jobs|wellfound\.com\/company|ziprecruiter|indeed\.com/.test(r.url);
     return {
       source: 'web-search',
       kind: isJob ? 'job' : 'post',
@@ -131,6 +137,7 @@ export const collector = {
       snippet: r.snippet || '',
       publishedAt: r.date,
       location: '',
+      companyName: isJob ? company : undefined,
       metadata: { query: r.query, host },
     };
   },

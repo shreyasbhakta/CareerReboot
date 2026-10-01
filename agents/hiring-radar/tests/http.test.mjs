@@ -64,3 +64,12 @@ test('logger redacts secrets from env values, query strings and auth headers', (
   createLogger({ sink: (l) => lines.push(l), env }).info('using sk-supersecretvalue123');
   assert.equal(lines[0], '[HiringRadar] using ***');
 });
+
+test('sends a single-value Accept header (Brave returns 422 for "a, b, */*")', async () => {
+  const seen = [];
+  const http = createHttp({ fetchImpl: async (u, init) => (seen.push(init.headers.accept), res(200, {})), perHostIntervalMs: 0 });
+  await http.getJson('https://a.test/x');
+  await http.postJson('https://a.test/y', {});
+  await http.getText('https://a.test/z');
+  assert.deepEqual(seen, ['application/json', 'application/json', '*/*']);
+});

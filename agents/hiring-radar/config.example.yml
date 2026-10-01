@@ -222,7 +222,7 @@ sources:
     # Providers are tried in order; the first configured one is used, others are fallbacks.
     # searxng -> SEARXNG_URL (see ../career-ops/deploy/searxng); brave -> BRAVE_SEARCH_API_KEY
     providers: [searxng, brave]
-    max_queries: 18
+    max_queries: 24
     results_per_query: 10
     cache_hours: 12
     # Queries are generated from roles x phrases x skills; these are the templates.
@@ -231,7 +231,11 @@ sources:
     skill_pairs: ["Java Kafka", "Spring Boot", "LangGraph", "RAG", "Python"]
     site_hints: ["linkedin.com/posts", "linkedin.com/feed/update", "x.com", "news.ycombinator.com"]
     # Result URLs matching these hosts are processed; others are discarded as noise.
-    allowed_hosts: ["linkedin.com", "x.com", "twitter.com", "news.ycombinator.com", "boards.greenhouse.io", "job-boards.greenhouse.io", "jobs.lever.co", "jobs.ashbyhq.com", "wellfound.com", "workable.com", "apply.workable.com", "ziprecruiter.com", "indeed.com"]
+    allowed_hosts: ["linkedin.com", "x.com", "twitter.com", "news.ycombinator.com", "boards.greenhouse.io", "job-boards.greenhouse.io", "jobs.lever.co", "jobs.ashbyhq.com", "wellfound.com", "workable.com", "apply.workable.com", "myworkdayjobs.com", "smartrecruiters.com", "recruitee.com", "breezy.hr", "bamboohr.com", "builtin.com", "builtinnyc.com"]
+    # Company career sites are too varied to list: any host starting with these is accepted too.
+    allowed_host_prefixes: ["careers.", "jobs.", "apply."]
+    # Aggregator / SEO listing pages ("Browse 189 jobs in ...") are not signals.
+    drop_title_patterns: ["^now hiring:", "\\b\\d[\\d,]*\\+?\\s+[\\w\\s/&-]{0,50}\\bjobs?\\b", "\\bjobs? in\\b", "\\bjobs? \\(", "^top \\d+", "^\\d+ best", "salary", "how to"]
 
 spike:
   min_recent_jobs: 3
