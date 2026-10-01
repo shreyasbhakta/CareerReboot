@@ -29,7 +29,7 @@ test('runs tests before the scan, and installs without career-ops postinstall sc
   const names = steps.map((s) => s.name || s.uses);
   assert.ok(names.indexOf('Test') < names.indexOf('Scan'));
   const install = steps.find((s) => s.name === 'Install dependencies').run;
-  assert.match(install, /career-ops install --ignore-scripts/);
+  assert.match(install, /career-ops ci --ignore-scripts/);
 });
 test('secrets come from the secrets context and are never echoed or put in the command line', () => {
   assert.ok(!/echo[^\n]*secrets\./.test(raw));
@@ -47,7 +47,7 @@ test('results are published only when no private connection data could leak', ()
 test('every npm/node command the workflow runs exists in this checkout', () => {
   const rootPkg = JSON.parse(readFileSync(resolve(repo, 'package.json'), 'utf8'));
   assert.ok(rootPkg.scripts['hiring-radar'] && rootPkg.scripts['hiring-radar:dry-run'] && rootPkg.scripts.test);
-  for (const p of ['agents/hiring-radar/scan.mjs', 'agents/hiring-radar/package-lock.json', 'agents/career-ops/package.json']) assert.ok(existsSync(resolve(repo, p)), p);
+  for (const p of ['agents/hiring-radar/scan.mjs', 'agents/hiring-radar/package-lock.json', 'agents/career-ops/package-lock.json']) assert.ok(existsSync(resolve(repo, p)), p);
   const hr = JSON.parse(readFileSync(resolve(repo, 'agents/hiring-radar/package.json'), 'utf8'));
   assert.ok(hr.scripts.test);
   const co = JSON.parse(readFileSync(resolve(repo, 'agents/career-ops/package.json'), 'utf8'));

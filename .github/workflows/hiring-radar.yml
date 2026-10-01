@@ -61,15 +61,14 @@ jobs:
         with:
           node-version: "22"
           cache: npm
-          cache-dependency-path: |
-            agents/career-ops/package-lock.json
-            agents/hiring-radar/package-lock.json
+          cache-dependency-path: agents/hiring-radar/package-lock.json
 
       - name: Install dependencies
         if: steps.gate.outputs.run == 'true'
         # --ignore-scripts: career-ops' postinstall downloads Chromium, which the scanner never uses.
+        # career-ops ships no package-lock.json, so it uses `install`; hiring-radar is locked.
         run: |
-          npm --prefix agents/career-ops ci --ignore-scripts
+          npm --prefix agents/career-ops install --ignore-scripts --no-audit --no-fund
           npm --prefix agents/hiring-radar ci
 
       - name: Test
