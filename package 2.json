@@ -4,7 +4,7 @@
   "description": "Workspace convenience scripts. Each agent keeps its own package.json and dependencies.",
   "license": "Apache-2.0",
   "scripts": {
-    "setup": "npm --prefix agents/career-ops install --ignore-scripts && npm --prefix agents/hiring-radar ci",
+    "setup": "npm --prefix agents/career-ops ci --ignore-scripts && npm --prefix agents/hiring-radar ci",
     "hiring-radar": "node agents/hiring-radar/scan.mjs",
     "hiring-radar:dry-run": "node agents/hiring-radar/scan.mjs --dry-run",
     "test": "npm --prefix agents/hiring-radar test",
