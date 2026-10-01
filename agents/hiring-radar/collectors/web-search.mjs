@@ -56,18 +56,18 @@ const braveFresh = { day: 'pd', week: 'pw', month: 'pm', year: 'py' };
 
 export const engines = {
   searxng: {
-    ready: (env) => Boolean(env.SEARXNG_URL),
+    ready: (env) => Boolean(env.SEARXNG_URL?.trim()),
     async search(http, env, query, { days, count }) {
-      const url = `${env.SEARXNG_URL.replace(/\/+$/, '')}/search?q=${encodeURIComponent(query)}&format=json&time_range=${rangeFor(days)}`;
+      const url = `${env.SEARXNG_URL.trim().replace(/\/+$/, '')}/search?q=${encodeURIComponent(query)}&format=json&time_range=${rangeFor(days)}`;
       const data = await http.getJson(url);
       return (data?.results || []).slice(0, count).map((r) => ({ url: r.url, title: r.title, snippet: r.content, date: r.publishedDate || r.published_date || null }));
     },
   },
   brave: {
-    ready: (env) => Boolean(env.BRAVE_SEARCH_API_KEY),
+    ready: (env) => Boolean(env.BRAVE_SEARCH_API_KEY?.trim()),
     async search(http, env, query, { days, count }) {
       const url = `https://api.search.brave.com/res/v1/web/search?q=${encodeURIComponent(query)}&count=${Math.min(count, 20)}&freshness=${braveFresh[rangeFor(days)]}`;
-      const data = await http.getJson(url, { headers: { 'x-subscription-token': env.BRAVE_SEARCH_API_KEY } });
+      const data = await http.getJson(url, { headers: { 'x-subscription-token': env.BRAVE_SEARCH_API_KEY.trim() } });
       return (data?.web?.results || []).slice(0, count).map((r) => ({
         url: r.url, title: r.title, snippet: (r.description || '').replace(/<[^>]+>/g, ''), date: r.page_age || r.age || null,
       }));

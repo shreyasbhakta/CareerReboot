@@ -3,7 +3,7 @@ import assert from 'node:assert/strict';
 import { createHttp, parseRetryAfter, mapLimit } from '../lib/http.mjs';
 import { redact, createLogger } from '../lib/logger.mjs';
 
-const res = (status, body = {}, headers = {}) => ({ ok: status < 400, status, headers: { get: (k) => headers[k.toLowerCase()] }, json: async () => body, text: async () => JSON.stringify(body) });
+const res = (status, body = {}, headers = {}) => ({ ok: status < 400, status, headers: { get: (k) => headers[k.toLowerCase()] }, json: async () => body, text: async () => (body === null ? '' : JSON.stringify(body)) });
 
 test('retries 429 honoring Retry-After, then succeeds', async () => {
   const sleeps = [];
@@ -72,4 +72,9 @@ test('sends a single-value Accept header (Brave returns 422 for "a, b, */*")', a
   await http.postJson('https://a.test/y', {});
   await http.getText('https://a.test/z');
   assert.deepEqual(seen, ['application/json', 'application/json', '*/*']);
+});
+
+test('empty success bodies (204 from Discord/Slack webhooks) resolve to null instead of throwing', async () => {
+  const http = createHttp({ fetchImpl: async () => res(204, null), perHostIntervalMs: 0 });
+  assert.equal(await http.postJson('https://hooks.test/x', {}), null);
 });

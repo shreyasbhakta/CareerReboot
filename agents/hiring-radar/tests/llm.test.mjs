@@ -4,7 +4,7 @@ import { cfg, silentLogger } from './helpers.mjs';
 import { createLlm, extractJson } from '../llm/router.mjs';
 import { classifyAmbiguous } from '../llm/tasks.mjs';
 
-const ok = (body) => ({ ok: true, status: 200, headers: { get: () => null }, json: async () => body, text: async () => '' });
+const ok = (body) => ({ ok: true, status: 200, headers: { get: () => null }, json: async () => body, text: async () => JSON.stringify(body) });
 const fail = (status) => ({ ok: false, status, headers: { get: () => null }, json: async () => ({}), text: async () => '' });
 const openaiBody = (obj) => ok({ choices: [{ message: { content: JSON.stringify(obj) } }], usage: { prompt_tokens: 10, completion_tokens: 5 } });
 const anthropicBody = (obj) => ok({ content: [{ type: 'text', text: JSON.stringify(obj) }], usage: { input_tokens: 7, output_tokens: 3 } });
