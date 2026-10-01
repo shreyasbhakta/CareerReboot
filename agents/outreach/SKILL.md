@@ -34,6 +34,7 @@ this conversation.
 | "Who do I need to follow up with today?" | Run `node followup-cadence.mjs --summary` from `agents/career-ops/`. Prints who's due, doesn't send anything. |
 | "Draft this week's follow-ups" | For each row `followup-cadence.mjs` flags as due, draft a short follow-up email/LinkedIn message referencing the specific role + how long it's been — pull the company/role/date from the tracker row, not from memory. |
 | Formal application email (subject/body/attachments) | career-ops' `email` mode — draft-only subject, body, attachment checklist, contact block. |
+| "Reach out to someone who's hiring right now" (a Hiring Radar signal) | Read the signal in `agents/career-ops/data/hiring-signals.json` (person, company, role, warm connection, `metadata.outreachAngle`) — see `agents/hiring-radar/SKILL.md`. Use the stored angle and proof points as the draft's hook, then follow the cold-email / `contacto` rows above. If a warm connection exists, draft the intro request to that person first. Set the signal's `status` to CONTACTED in `hiring-signals.tsv` only after the user says they sent it. |
 
 ## Ethical rules (inherited, non-negotiable)
 

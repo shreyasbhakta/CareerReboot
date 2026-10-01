@@ -1,0 +1,8 @@
+[
+  {"text": "We're hiring a Forward Deployed Engineer in New York.", "person": {"name": "Jane Doe", "title": "VP Engineering"}, "company": "Example AI", "publishedAt": "2026-10-01T10:00:00Z"},
+  {"text": "I'm hiring a backend engineer for my team. Java, Kafka, Spring Boot, payments. Remote US.", "person": {"name": "Sam Lee", "title": "Engineering Manager"}, "company": "PayCo", "publishedAt": "2026-09-30T08:00:00Z"},
+  {"text": "We recently hired John as our new designer. Welcome to the team!", "company": "Nope Inc", "publishedAt": "2026-10-01T09:00:00Z"},
+  {"text": "Join us at Company X — we're hiring across 20 departments.", "company": "Company X", "publishedAt": "2026-10-01T09:00:00Z"},
+  {"text": "We're hiring a Frontend Engineer in New York.", "company": "FrontCo", "publishedAt": "2026-10-01T09:00:00Z"},
+  {"text": "Excited to announce our new engineer joining the team!", "company": "Excited Co", "publishedAt": "2026-10-01T09:00:00Z"}
+]

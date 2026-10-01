@@ -2,6 +2,8 @@ import { pipelineSummary, doctorState, pdfReadyForReport, readReport, extractUrl
 import { parseReport } from "@/lib/format";
 import { OnboardingBanner } from "@/components/onboarding-banner";
 import { FirstRunHome } from "@/components/home/first-run-home";
+import Link from "next/link";
+import { Crosshair } from "lucide-react";
 import { KanbanBoard } from "@/components/dashboard/kanban-board";
 
 export const dynamic = "force-dynamic"; // always read fresh local files at request time (never at build — CI has no user data)
@@ -37,6 +39,15 @@ export default async function Home() {
   return (
     <>
       {onboardingNeeded && <OnboardingBanner />}
+      <Link
+        href="/hiring-radar"
+        className="mx-4 mt-4 flex items-center gap-3 rounded-xl border border-border bg-surface/50 px-4 py-3 text-sm transition-colors hover:bg-surface-hover max-sm:mx-3"
+      >
+        <Crosshair className="size-5 text-brand" />
+        <span className="font-medium text-foreground">Hiring Radar</span>
+        <span className="text-muted">See who is hiring for your profile right now — run a scan, set the schedule, manage keys.</span>
+        <span className="ml-auto text-brand">Open →</span>
+      </Link>
       <KanbanBoard applications={applications} inbox={inbox} pdfReadyMap={pdfReadyMap} reportUrlMap={reportUrlMap} />
     </>
   );

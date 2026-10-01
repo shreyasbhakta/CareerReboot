@@ -1,0 +1,292 @@
+# Hiring Radar configuration (non-secret).
+#
+# Resolution order (later wins, objects merge, arrays replace):
+#   1. this file                       (committed defaults)
+#   2. config.yml                      (gitignored, your local overrides)
+#   3. $HIRING_RADAR_CONFIG            (path to another YAML file, e.g. in CI)
+#   4. ../career-ops/config/profile.yml for candidate name / location / target roles
+#   5. CLI flags (--days, --limit, --min-score, ...)
+# Secrets (API keys, webhook URLs) are NEVER read from YAML — only from env.
+
+profile:
+  name: "Shreyas Kumar Bhakta"          # overridden by career-ops profile.yml when present
+  home_locations: ["new york", "nyc", "new york city", "manhattan", "brooklyn", "queens", "jersey city", "hoboken", "newark", "new jersey", "nj", "ny"]
+  open_to_relocation: true
+  remote_us_ok: true
+
+# ---- Role families -------------------------------------------------------
+# tier: target   = a role you want; adjacent = plausible, scored lower;
+# `aliases` are matched on normalized titles/text (punctuation -> spaces).
+role_families:
+  - id: swe
+    label: Software Engineer
+    tier: target
+    aliases: ["software engineer", "software development engineer", "software developer", "sde", "swe", "sde ii", "software engineer ii", "member of technical staff"]
+  - id: backend
+    label: Backend Engineer
+    tier: target
+    aliases: ["backend engineer", "back end engineer", "backend software engineer", "backend developer", "back end developer", "server side engineer", "software engineer backend", "software engineer back end", "backend software developer", "distributed systems engineer"]
+  - id: fde
+    label: Forward Deployed Engineer
+    tier: target
+    aliases: ["forward deployed engineer", "forward deployment engineer", "forward deployed software engineer", "fde", "deployed engineer", "deployment engineer", "customer engineer", "technical solutions engineer", "solutions engineer", "implementation engineer", "field engineer", "applied engineer"]
+  - id: ai
+    label: AI Engineer
+    tier: target
+    aliases: ["ai engineer", "applied ai engineer", "ai software engineer", "llm engineer", "generative ai engineer", "gen ai engineer", "genai engineer", "agentic ai engineer", "ai agent engineer", "ai platform engineer", "ai application engineer", "ai developer", "machine learning engineer ai", "applied ai software engineer"]
+  - id: fullstack
+    label: Full Stack Engineer
+    tier: adjacent
+    aliases: ["full stack engineer", "fullstack engineer", "full stack software engineer", "full stack developer"]
+  - id: mle
+    label: Machine Learning Engineer
+    tier: adjacent
+    aliases: ["machine learning engineer", "ml engineer", "mlops engineer"]
+  - id: platform
+    label: Platform / DevOps Engineer
+    tier: adjacent
+    aliases: ["platform engineer", "site reliability engineer", "sre", "devops engineer", "infrastructure engineer"]
+
+# Never equivalent to the families above (checked against the title first).
+exclude_roles:
+  - "data scientist"
+  - "research scientist"
+  - "machine learning research"
+  - "research engineer scientist"
+  - "frontend engineer"
+  - "front end engineer"
+  - "front end developer"
+  - "frontend developer"
+  - "mobile engineer"
+  - "ios engineer"
+  - "android engineer"
+  - "ios developer"
+  - "android developer"
+  - "data analyst"
+  - "business analyst"
+  - "product manager"
+  - "designer"
+  - "marketing"
+  - "sales representative"
+  - "account executive"
+  - "recruiter coordinator"
+  - "cybersecurity"
+  - "security engineer"
+  - "qa engineer"
+  - "quality assurance"
+  - "sdet"
+  # Single-word qualifiers: "Software Engineer, Mobile Platform (iOS)" is not a match.
+  # Checked inside the role phrase's window (whole title for titles), so "our mobile app"
+  # elsewhere in a post does not exclude it.
+  - "mobile"
+  - "ios"
+  - "android"
+  - "frontend"
+  - "qa"
+
+seniority:
+  # Titles containing these are dropped (profile: ~3 YOE, mid-level).
+  exclude_title_terms: ["intern", "internship", "co-op", "vice president", "vp of", "director", "head of", "chief"]
+  # Titles containing these keep a role match but lose points.
+  penalty_title_terms: ["principal", "staff", "distinguished", "manager", "lead"]
+  penalty_points: 15
+
+# ---- Skills (transparent technical match) --------------------------------
+# technicalMatch = role base (target 70 / adjacent 35 / unknown 20) + skill points
+# (capped at `skill_points_cap`), clamped to 100. Every contributing term is
+# listed in the output, e.g. "Java +4".
+technical:
+  role_base: { target: 70, adjacent: 35, unknown: 20 }
+  skill_points_cap: 30
+  skills:
+    core:
+      - { name: Java, terms: ["java"], points: 4 }
+      - { name: Spring Boot, terms: ["spring boot", "spring"], points: 4 }
+      - { name: Python, terms: ["python"], points: 3 }
+      - { name: Kotlin, terms: ["kotlin"], points: 2 }
+      - { name: TypeScript, terms: ["typescript", "node.js", "nodejs"], points: 2 }
+      - { name: Kafka, terms: ["kafka"], points: 3 }
+      - { name: Redis, terms: ["redis"], points: 2 }
+      - { name: PostgreSQL, terms: ["postgresql", "postgres"], points: 2 }
+      - { name: Microservices, terms: ["microservices", "microservice"], points: 3 }
+      - { name: Distributed systems, terms: ["distributed systems", "distributed system", "event driven"], points: 3 }
+      - { name: Backend, terms: ["backend", "back end", "server side"], points: 2 }
+      - { name: APIs, terms: ["rest api", "rest apis", "apis", "grpc", "graphql"], points: 2 }
+      - { name: AWS, terms: ["aws", "amazon web services"], points: 2 }
+      - { name: Docker/Kubernetes, terms: ["docker", "kubernetes", "k8s"], points: 2 }
+    ai:
+      - { name: LangChain/LangGraph, terms: ["langchain", "langgraph"], points: 3 }
+      - { name: RAG, terms: ["rag", "retrieval augmented generation", "retrieval augmented"], points: 3 }
+      - { name: LLM, terms: ["llm", "llms", "large language model", "large language models"], points: 3 }
+      - { name: Agentic AI, terms: ["agentic", "ai agents", "ai agent", "multi agent"], points: 3 }
+      - { name: MCP, terms: ["mcp", "model context protocol"], points: 2 }
+      - { name: Generative AI, terms: ["generative ai", "genai", "gen ai"], points: 2 }
+      - { name: FastAPI, terms: ["fastapi"], points: 2 }
+      - { name: AI evaluation, terms: ["evals", "ai evaluation", "llm evaluation", "ragas"], points: 2 }
+      - { name: Playwright, terms: ["playwright"], points: 1 }
+    domain:
+      - { name: Fintech, terms: ["fintech", "financial technology"], points: 3 }
+      - { name: Payments, terms: ["payments", "payment processing", "payment"], points: 3 }
+      - { name: Banking, terms: ["banking", "banks"], points: 2 }
+      - { name: Mobility, terms: ["mobility"], points: 1 }
+      - { name: Enterprise SaaS, terms: ["enterprise saas", "b2b saas", "enterprise software"], points: 2 }
+    client_facing:
+      - { name: Forward deployed, terms: ["forward deployed"], points: 3 }
+      - { name: Customer-facing, terms: ["customer facing", "client facing"], points: 3 }
+      - { name: Technical discovery, terms: ["technical discovery", "discovery"], points: 2 }
+      - { name: Stakeholder management, terms: ["stakeholder", "stakeholders"], points: 2 }
+      - { name: Implementation/deployment, terms: ["implementation", "deployment", "solutions"], points: 1 }
+
+# ---- Hiring language -------------------------------------------------------
+# Deterministic first pass. `strong` = explicit first-person/team hiring;
+# `weak` = vague recruiting copy; `negative` = NOT a hiring signal.
+signals:
+  strong_first_person: ["i'?m hiring", "i am hiring", "i'?m looking for", "i am looking for", "join my team", "my team is hiring", "my team'?s hiring"]
+  strong_team: ["we'?re hiring", "we are hiring", "we'?re looking for", "we are looking for", "join our team", "join our engineering team", "now hiring", "is hiring", "are hiring", "hiring for", "open role", "open roles", "we have an opening", "hiring (an? |the )?[\\w\\s\\-/]{0,40}?(engineers?|developers?|fde)\\b", "(looking|searching) for (an? |the )?[\\w\\s\\-/]{0,40}?(engineers?|developers?)\\b", "seeking (an? )?[\\w\\s\\-/]{0,40}?(engineers?|developers?)\\b", "(we|i) (need|want) (an? )?[\\w\\s\\-/]{0,40}?(engineers?|developers?)\\b"]
+  team_expansion: ["building out the engineering team", "growing our engineering team", "expanding the engineering team", "building our engineering team", "growing the engineering team", "scaling our engineering team", "scaling the engineering team", "expanding our engineering team", "building out our team", "growing our team"]
+  weak: ["come work with us", "join us", "work with us", "careers at", "we'?re growing", "open to applications", "dm me", "reach out"]
+  broad_scope: ["across \\d+ (departments|teams|functions)", "multiple roles", "many roles", "several roles", "all departments", "across the company", "across departments"]
+  negative: ["recently hired", "we hired", "i hired", "just hired", "excited to announce (our|a|the) new", "welcome(d)? .{0,40} to the team", "thrilled to welcome", "please welcome", "congratulations", "congrats", "joined (us|the team|our team)", "has joined", "just joined", "is joining", "new hire", "was hired", "got hired", "open to work", "looking for (a )?(new )?(job|role|opportunit)", "#opentowork", "i'?m looking for my next", "laid off"]
+  # Strength -> score used for the "direct hiring language" component.
+  strength_scores: { first_person_role: 100, team_role: 90, first_person: 85, team_expansion: 75, team_generic: 70, weak: 30, job_posting: 70, spike: 40 }
+
+# ---- Recency ----------------------------------------------------------------
+recency:
+  default_days: 7
+  max_days: 30
+  unknown_age_score: 30        # postings that expose no date (many ATS boards)
+  allow_undated_web_jobs: false  # search-engine job-page hits without a date are dropped (ATS API jobs are kept)
+  allow_undated_posts: false   # search/social posts without a parseable date are dropped (jobs are kept)
+  # first band whose max_hours >= age wins; older than the last band -> floor_score
+  bands:
+    - { max_hours: 12,  score: 100 }
+    - { max_hours: 24,  score: 90 }
+    - { max_hours: 48,  score: 80 }
+    - { max_hours: 96,  score: 65 }
+    - { max_hours: 168, score: 45 }
+    - { max_hours: 336, score: 25 }
+  floor_score: 10
+
+# ---- Overall score -----------------------------------------------------------
+scoring:
+  weights: { technical: 0.35, activity: 0.25, direct_language: 0.15, person: 0.10, location: 0.10, company: 0.05 }
+  min_score: 55                # floor for the report/digest (CLI: --min-score)
+  persist_min_score: 40        # lower floor for history, so spike baselines keep job data
+  person_scores:
+    leader_high: 100           # founder/CTO/VP/head/EM with HIGH confidence
+    recruiter_high: 75
+    other_high: 60
+    medium_factor: 0.8
+    low_factor: 0.4
+  leader_titles: ["founder", "co-founder", "cofounder", "ceo", "cto", "vp engineering", "vp of engineering", "vice president", "head of engineering", "director of engineering", "engineering manager", "hiring manager", "chief technology", "technical lead", "tech lead", "head of ai", "head of product engineering"]
+  recruiter_titles: ["recruiter", "talent", "sourcer", "people partner", "head of talent", "recruiting"]
+  company_relevance:
+    base: 50
+    domain_terms: ["fintech", "payments", "banking", "enterprise", "saas", "ai", "llm", "mobility"]
+    domain_bonus: 25
+    tracked_bonus: 25          # company appears in portals.yml tracked_companies
+
+# ---- Location ------------------------------------------------------------------
+location:
+  remote_terms: ["remote", "anywhere", "distributed", "work from home", "wfh"]
+  us_terms: ["united states", "usa", "u.s.", "us only", "us-based", "america"]
+  non_us_terms: ["london", "united kingdom", "uk", "india", "bangalore", "bengaluru", "mumbai", "hyderabad", "pune", "toronto", "canada", "vancouver", "germany", "berlin", "munich", "france", "paris", "ireland", "dublin", "amsterdam", "netherlands", "singapore", "australia", "sydney", "tel aviv", "israel", "brazil", "sao paulo", "mexico", "japan", "tokyo", "poland", "warsaw", "spain", "barcelona", "portugal", "lisbon", "emea", "apac", "europe"]
+  drop_non_us: true            # drop signals whose ONLY stated location is outside the US
+  scores: { home: 100, remote_us: 90, us_other: 60, unknown: 50, non_us: 0 }
+
+# ---- Sources ------------------------------------------------------------------
+sources:
+  hn:
+    enabled: true
+    max_comments: 400          # per run; "Who is hiring" threads hold ~600 comments
+  jobs:
+    enabled: true
+    max_companies: 40          # per run, rotated daily over the candidate list
+    concurrency: 4
+    max_jobs_per_company: 60
+    # Used when ../career-ops/portals.yml is absent (e.g. CI). Public ATS boards only.
+    companies:
+      - { name: Anthropic, careers_url: "https://job-boards.greenhouse.io/anthropic" }
+      - { name: Stripe, careers_url: "https://job-boards.greenhouse.io/stripe" }
+      - { name: Datadog, careers_url: "https://job-boards.greenhouse.io/datadog" }
+      - { name: Databricks, careers_url: "https://job-boards.greenhouse.io/databricks" }
+      - { name: Airbnb, careers_url: "https://job-boards.greenhouse.io/airbnb" }
+      - { name: Brex, careers_url: "https://job-boards.greenhouse.io/brex" }
+      - { name: Ramp, api: "https://api.ashbyhq.com/posting-api/job-board/ramp" }
+      - { name: OpenAI, api: "https://api.ashbyhq.com/posting-api/job-board/openai" }
+      - { name: Cohere, api: "https://api.ashbyhq.com/posting-api/job-board/cohere" }
+      - { name: Notion, api: "https://api.ashbyhq.com/posting-api/job-board/notion" }
+      - { name: Plaid, careers_url: "https://jobs.lever.co/plaid" }
+      - { name: Mistral AI, careers_url: "https://jobs.lever.co/mistral" }
+  web_search:
+    enabled: true
+    # Providers are tried in order; the first configured one is used, others are fallbacks (also when one returns nothing).
+    # searxng -> SEARXNG_URL (see ../career-ops/deploy/searxng); brave -> BRAVE_SEARCH_API_KEY
+    providers: [brave, searxng]
+    max_queries: 8           # each query is one paid-API request; raise deliberately
+    results_per_query: 10
+    cache_hours: 22
+    # Queries are generated from roles x phrases x skills; these are the templates.
+    phrases: ["hiring", "we're hiring", "I'm hiring", "join our team", "looking for"]
+    location_terms: ["New York", "remote"]
+    skill_pairs: ["Java Kafka", "Spring Boot", "LangGraph", "RAG", "Python"]
+    site_hints: ["linkedin.com/posts", "linkedin.com/feed/update", "x.com", "news.ycombinator.com"]
+    # Result URLs matching these hosts are processed; others are discarded as noise.
+    allowed_hosts: ["linkedin.com", "x.com", "twitter.com", "news.ycombinator.com", "boards.greenhouse.io", "job-boards.greenhouse.io", "jobs.lever.co", "jobs.ashbyhq.com", "wellfound.com", "workable.com", "apply.workable.com", "myworkdayjobs.com", "smartrecruiters.com", "recruitee.com", "breezy.hr", "bamboohr.com", "builtin.com", "builtinnyc.com"]
+    # Company career sites are too varied to list: any host starting with these is accepted too.
+    allowed_host_prefixes: ["careers.", "jobs.", "apply."]
+    # Aggregator / SEO listing pages ("Browse 189 jobs in ...") are not signals.
+    drop_title_patterns: ["^now hiring:", "\\b\\d[\\d,]*\\+?\\s+[\\w\\s/&-]{0,50}\\bjobs?\\b", "\\bjobs? in\\b", "\\bjobs? \\(", "^top \\d+", "^\\d+ best", "salary", "how to"]
+
+spike:
+  min_recent_jobs: 3
+  recent_days: 7
+  baseline_days: 28
+  ratio: 2.0                    # recent must exceed baseline-per-week by this factor
+
+enrichment:
+  lookup_people: true           # unverified SearXNG people search for top jobs without a person
+  max_people_lookups: 8
+
+# ---- Model routing -----------------------------------------------------------
+# LLM is only used for ambiguous hiring classification and short "why this
+# matches" explanations on top results. Everything works with it disabled.
+llm:
+  enabled: auto                 # auto = on only when MODEL_PROVIDER is set (+ a key); true/false to force
+  providers: [openai, anthropic, gemini]   # fallback order; MODEL_PROVIDER moves one to the front
+  default_models: { openai: "gpt-4o-mini", anthropic: "claude-haiku-4-5-20251001", gemini: "gemini-flash-latest" }
+  max_calls: 25
+  timeout_ms: 25000
+  retries: 1
+  ambiguous_range: [40, 75]     # directScore band that triggers classification
+  explain_top: 10
+
+# ---- Output --------------------------------------------------------------------
+output:
+  high_signal_min: 80
+  active_min: 65
+  digest: { primary: 10, secondary: 10 }
+  max_per_company: 2            # digest diversity cap
+  retention_days: 90
+
+notify:
+  enabled: false                # or HIRING_RADAR_NOTIFY=true; webhook URL via HIRING_RADAR_WEBHOOK_URL
+  min_score: 80
+  max_items: 5
+
+http:
+  timeout_ms: 15000
+  retries: 3
+  base_delay_ms: 800
+  max_delay_ms: 20000
+  max_concurrency: 4
+  per_host_interval_ms: 500
+
+outreach:
+  # Which profile proof points (career-ops profile.yml narrative.proof_points)
+  # are relevant for each matched skill group. Keywords match proof name/metric.
+  group_proof_keywords:
+    core: [kafka, distributed, microservice, latency, checkout, transaction]
+    ai: [rag, ragas, ai, agent, llm]
+    domain: [payment, bank, hdfc, fintech]
+    client_facing: [hdfc, stakeholder, embedded, bank]

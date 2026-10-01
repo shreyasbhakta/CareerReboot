@@ -15,3 +15,11 @@ node_modules/
 
 # OS cruft
 .DS_Store
+
+# Hiring Radar — local config, workflow data dir, and any LinkedIn export
+agents/hiring-radar/config.yml
+agents/hiring-radar/.env
+.hiring-radar-data/
+Connections.csv
+**/Connections.csv
+!agents/hiring-radar/tests/fixtures/Connections.csv
