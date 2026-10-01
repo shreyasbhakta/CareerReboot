@@ -23,3 +23,8 @@ agents/hiring-radar/.env
 Connections.csv
 **/Connections.csv
 !agents/hiring-radar/tests/fixtures/Connections.csv
+
+# macOS/cloud-sync conflict copies ("file 2.ext") — never commit
+* 2
+* 2.*
+* 2/
