@@ -256,7 +256,7 @@ function Field({ k, label, state, placeholder, secret, form, setForm, help }: an
     <div>
       <label className={labelCls}>{label} {st.set && <span className="ml-1 text-emerald-600">● set</span>}{help && <span className="ml-1 font-normal text-faint">— {help}</span>}</label>
       <div className="flex gap-2">
-        <input className={inputCls} type={secret ? "password" : "text"} autoComplete="off" placeholder={st.set ? (secret ? "•••••• (leave blank to keep)" : st.value) : placeholder}
+        <input className={inputCls} type="text" name={`hr-${k}`} autoComplete="off" data-lpignore="true" data-1p-ignore="true" style={secret ? ({ WebkitTextSecurity: "disc" } as React.CSSProperties) : undefined} placeholder={st.set ? (secret ? "•••••• (leave blank to keep)" : st.value) : placeholder}
           value={form[k] ?? ""} onChange={(e) => setForm({ ...form, [k]: e.target.value })} />
         {st.set && <Button variant="outline" size="sm" type="button" onClick={() => setForm({ ...form, [k]: null })} title="Remove">Clear</Button>}
       </div>
