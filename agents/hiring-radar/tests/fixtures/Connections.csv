@@ -1,0 +1,8 @@
+Notes:
+"When exporting your connection data, you may notice that some of the email addresses are missing."
+
+First Name,Last Name,URL,Email Address,Company,Position,Connected On
+Jane,Doe,https://www.linkedin.com/in/janedoe,,Example AI,VP Engineering,12 Jan 2024
+John,Smith,https://www.linkedin.com/in/johnsmith,,XYZ AI,Engineering Manager,03 Mar 2023
+Pat,Jones,https://www.linkedin.com/in/patjones,,Acme Robotics,Office Manager,01 Feb 2022
+Sam,Roe,https://www.linkedin.com/in/samroe,,PayCo Inc,Senior Software Engineer,05 May 2021
