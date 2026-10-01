@@ -60,7 +60,9 @@ export function createHttp({
         signal: ctl.signal,
       });
       if (!res.ok) {
-        const err = new Error(`HTTP ${res.status}`);
+        // Keep a short snippet of the provider's explanation (e.g. Brave's validation message) — it is what makes a 4xx diagnosable.
+        const detail = (await res.text?.().catch(() => '') || '').replace(/\s+/g, ' ').slice(0, 220);
+        const err = new Error(`HTTP ${res.status}${detail ? ` ${detail}` : ''}`);
         err.status = res.status;
         err.retryAfterMs = parseRetryAfter(res.headers?.get?.('retry-after'));
         throw err;
