@@ -1,0 +1,154 @@
+name: Hiring Radar
+
+# Daily active-hiring scan. Discovery only: it never sends messages, applies to
+# jobs, or submits forms. Results are published as a workflow artifact and job
+# summary — NOT committed (career-ops keeps data/ out of git by design).
+#
+# Schedule: 07:30 America/New_York. GitHub cron is UTC-only and ignores DST, so
+# two UTC times are listed (11:30 = 07:30 EDT, 12:30 = 07:30 EST) and the
+# "gate" step lets only the one that is 07:xx in New York actually run.
+
+on:
+  workflow_dispatch:
+    inputs:
+      days:
+        description: "Search window in days (1-30)"
+        default: "7"
+      min_score:
+        description: "Minimum score for the report (0-100, blank = config default)"
+        default: ""
+      source:
+        description: "all | jobs | hiring-posts | hn | web-search"
+        default: "all"
+      dry_run:
+        description: "Dry run (print only, write nothing)"
+        type: boolean
+        default: false
+  schedule:
+    - cron: "30 11 * * *"   # 07:30 EDT (Mar-Nov)
+    - cron: "30 12 * * *"   # 07:30 EST (Nov-Mar)
+
+# One scan at a time; a late run queues behind the current one instead of killing it.
+concurrency:
+  group: hiring-radar
+  cancel-in-progress: false
+
+permissions:
+  contents: read
+
+jobs:
+  scan:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    env:
+      HIRING_RADAR_DATA_DIR: ${{ github.workspace }}/.hiring-radar-data
+    steps:
+      - name: Gate on New York local time (scheduled runs only)
+        id: gate
+        run: |
+          if [ "${{ github.event_name }}" = "schedule" ]; then
+            hour="$(TZ=America/New_York date +%H)"
+            echo "New York hour: $hour"
+            if [ "$hour" != "07" ]; then echo "run=false" >> "$GITHUB_OUTPUT"; echo "Not 07:xx in New York; skipping."; exit 0; fi
+          fi
+          echo "run=true" >> "$GITHUB_OUTPUT"
+
+      - uses: actions/checkout@v4
+        if: steps.gate.outputs.run == 'true'
+
+      - uses: actions/setup-node@v4
+        if: steps.gate.outputs.run == 'true'
+        with:
+          node-version: "22"
+          cache: npm
+          cache-dependency-path: |
+            agents/career-ops/package-lock.json
+            agents/hiring-radar/package-lock.json
+
+      - name: Install dependencies
+        if: steps.gate.outputs.run == 'true'
+        # --ignore-scripts: career-ops' postinstall downloads Chromium, which the scanner never uses.
+        run: |
+          npm --prefix agents/career-ops ci --ignore-scripts
+          npm --prefix agents/hiring-radar ci
+
+      - name: Test
+        if: steps.gate.outputs.run == 'true'
+        run: |
+          npm --prefix agents/hiring-radar test
+          npm --prefix agents/career-ops run lint
+
+      - name: Restore signal history
+        if: steps.gate.outputs.run == 'true'
+        uses: actions/cache@v4
+        with:
+          path: .hiring-radar-data
+          key: hiring-radar-data-${{ github.run_id }}
+          restore-keys: hiring-radar-data-
+
+      - name: Materialize optional private inputs
+        if: steps.gate.outputs.run == 'true'
+        env:
+          CONNECTIONS_B64: ${{ secrets.LINKEDIN_CONNECTIONS_CSV_B64 }}
+          CONFIG_YML: ${{ secrets.HIRING_RADAR_CONFIG_YML }}
+        run: |
+          umask 077
+          if [ -n "$CONNECTIONS_B64" ]; then
+            printf '%s' "$CONNECTIONS_B64" | base64 -d > "$RUNNER_TEMP/Connections.csv"
+            echo "LINKEDIN_CONNECTIONS_CSV=$RUNNER_TEMP/Connections.csv" >> "$GITHUB_ENV"
+            echo "HR_HAS_CONNECTIONS=true" >> "$GITHUB_ENV"
+          fi
+          if [ -n "$CONFIG_YML" ]; then
+            printf '%s' "$CONFIG_YML" > "$RUNNER_TEMP/hiring-radar.config.yml"
+            echo "HIRING_RADAR_CONFIG=$RUNNER_TEMP/hiring-radar.config.yml" >> "$GITHUB_ENV"
+          fi
+
+      - name: Scan
+        if: steps.gate.outputs.run == 'true'
+        env:
+          # Search providers (any one is enough; the hn + jobs sources need none)
+          SEARXNG_URL: ${{ secrets.SEARXNG_URL }}
+          BRAVE_SEARCH_API_KEY: ${{ secrets.BRAVE_SEARCH_API_KEY }}
+          # Optional model routing — disabled unless MODEL_PROVIDER is set
+          MODEL_PROVIDER: ${{ vars.MODEL_PROVIDER }}
+          MODEL_NAME: ${{ vars.MODEL_NAME }}
+          MODEL_BASE_URL: ${{ vars.MODEL_BASE_URL }}
+          OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
+          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+          GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
+          OPENROUTER_API_KEY: ${{ secrets.OPENROUTER_API_KEY }}
+          OMNIROUTE_API_KEY: ${{ secrets.OMNIROUTE_API_KEY }}
+          # Optional notification
+          HIRING_RADAR_NOTIFY: ${{ vars.HIRING_RADAR_NOTIFY }}
+          HIRING_RADAR_WEBHOOK_URL: ${{ secrets.HIRING_RADAR_WEBHOOK_URL }}
+          # Inputs (passed through env, never interpolated into the shell command)
+          IN_DAYS: ${{ inputs.days || '7' }}
+          IN_MIN_SCORE: ${{ inputs.min_score }}
+          IN_SOURCE: ${{ inputs.source || 'all' }}
+          IN_DRY_RUN: ${{ inputs.dry_run }}
+        run: |
+          args=(--days "$IN_DAYS" --source "$IN_SOURCE")
+          [ -n "$IN_MIN_SCORE" ] && args+=(--min-score "$IN_MIN_SCORE")
+          [ "$IN_DRY_RUN" = "true" ] && args+=(--dry-run)
+          echo "Running: node agents/hiring-radar/scan.mjs ${args[*]}"
+          node agents/hiring-radar/scan.mjs "${args[@]}"
+
+      - name: Publish digest
+        # Withheld on public repos when connection data is loaded: it would expose
+        # names from your LinkedIn export.
+        if: always() && steps.gate.outputs.run == 'true' && (github.event.repository.private || env.HR_HAS_CONNECTIONS != 'true')
+        run: |
+          md="$HIRING_RADAR_DATA_DIR/hiring-radar.md"
+          if [ -f "$md" ]; then cat "$md" >> "$GITHUB_STEP_SUMMARY"; else echo "No digest produced (dry run or failed scan)." >> "$GITHUB_STEP_SUMMARY"; fi
+
+      - name: Upload results
+        if: always() && steps.gate.outputs.run == 'true' && (github.event.repository.private || env.HR_HAS_CONNECTIONS != 'true')
+        uses: actions/upload-artifact@v4
+        with:
+          name: hiring-radar-${{ github.run_id }}
+          path: |
+            .hiring-radar-data/hiring-radar.md
+            .hiring-radar-data/hiring-signals.json
+            .hiring-radar-data/hiring-signals.tsv
+          if-no-files-found: ignore
+          retention-days: 14
