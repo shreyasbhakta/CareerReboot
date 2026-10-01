@@ -82,7 +82,12 @@ export function createHttp({
       try {
         await spaceHost(host);
         const res = await once(url, init);
-        return parse === 'json' ? await res.json() : await res.text();
+        if (parse === 'json') {
+          // 204 / empty bodies (Discord and Slack webhooks answer this way on success) are not errors.
+          const txt = await res.text();
+          return txt.trim() ? JSON.parse(txt) : null;
+        }
+        return await res.text();
       } catch (e) {
         lastErr = e.name === 'AbortError' ? Object.assign(new Error(`timeout after ${timeoutMs}ms`), { name: 'AbortError' }) : e;
         if (attempt === retries || !retryable(lastErr)) break;
