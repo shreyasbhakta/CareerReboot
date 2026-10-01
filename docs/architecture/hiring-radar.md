@@ -161,6 +161,10 @@ Reused from career-ops (not duplicated): `lib/cli-flags`, `lib/is-main-module`, 
 * Secrets (all optional): `SEARXNG_URL`, `BRAVE_SEARCH_API_KEY`, `OPENAI_API_KEY`, `ANTHROPIC_API_KEY`, `GEMINI_API_KEY`, `OPENROUTER_API_KEY`, `OMNIROUTE_API_KEY`, `HIRING_RADAR_WEBHOOK_URL`, `LINKEDIN_CONNECTIONS_CSV_B64` (base64 of your export, written to a 0600 temp file), `HIRING_RADAR_CONFIG_YML`. Variables: `MODEL_PROVIDER`, `MODEL_NAME`, `MODEL_BASE_URL`, `HIRING_RADAR_NOTIFY`.
 * **Public repo caution:** if the repo is public *and* a connections secret is configured, the summary/artifact steps are skipped so names from your export are not exposed.
 
+## 10b. Dashboard page
+
+`/hiring-radar` in the career-ops web app (nav entry + banner on the home page). It is a thin shell: `src/lib/hiring-radar.ts` and `src/app/api/hiring-radar/*` resolve paths, edit the gitignored `.env` / `config.yml` / one marked crontab block, supervise a single `scan.mjs` child process and read `hiring-signals.json`. Config saves are validated by `scan.mjs --check-config <file>`; status changes go through `set-status.mjs`. It inherits the app's existing origin guard and optional password gate. Cron writes use the *user* crontab only and touch nothing outside the `careerreboot-hiring-radar` markers; on macOS the system may ask for permission the first time (the request times out after 20 s with a message rather than hanging).
+
 ## 11. Limitations (honest)
 
 * **Search coverage is the weak link.** Without a SearXNG instance or Brave key the `web-search` source is skipped, leaving `hn` + `jobs`. Public search engines index only a fraction of LinkedIn/X posts and often omit dates; undated posts are dropped on purpose, so recall for "someone posted yesterday" is limited by the engine.

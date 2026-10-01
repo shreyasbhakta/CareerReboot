@@ -4,6 +4,17 @@ Finds **who is actively hiring for roles that match your profile right now** —
 
 Design, scoring model, source and dependency decisions: [`docs/architecture/hiring-radar.md`](../../docs/architecture/hiring-radar.md).
 
+## UI (recommended)
+
+Start the dashboard (`cd agents/career-ops/web && npm run dev`, then open http://localhost:3000) and click **Hiring Radar** — a banner on the main dashboard page and an entry in the sidebar. The page has:
+
+* **Setup checklist** — what is configured and what is missing.
+* **Results** — scored cards with the hiring person (or "not identified"), warm connection, why-this-score breakdown, a draft outreach angle, and a status dropdown (REVIEWED / CONTACTED / DISMISSED / CONVERTED).
+* **Run** — days, minimum score, sources, dry-run toggle, live log. One scan at a time.
+* **Keys & data** — search backend, model provider and keys, webhook, and LinkedIn `Connections.csv` upload. Secrets go to the gitignored `agents/hiring-radar/.env` (mode 600) and are never sent back to the browser.
+* **Schedule** — installs/removes one marked entry in your user crontab (time, weekdays, window, sources).
+* **Scoring & config** — weights, thresholds and limits as form fields, plus a YAML override editor; saved only if the scanner's own validator accepts it.
+
 ## Quick start
 
 ```bash
