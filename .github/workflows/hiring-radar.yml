@@ -4,8 +4,8 @@ name: Hiring Radar
 # jobs, or submits forms. Results are published as a workflow artifact and job
 # summary — NOT committed (career-ops keeps data/ out of git by design).
 #
-# Schedule: 07:30 America/New_York. GitHub cron is UTC-only and ignores DST, so
-# two UTC times are listed (11:30 = 07:30 EDT, 12:30 = 07:30 EST) and the
+# Schedule: ~07:35 America/New_York. GitHub cron is UTC-only and ignores DST, so
+# two UTC times are listed (11:35 = 07:35 EDT, 12:35 = 07:35 EST) and the
 # "gate" step lets only the one that is 07:xx in New York actually run.
 
 on:
@@ -25,8 +25,8 @@ on:
         type: boolean
         default: false
   schedule:
-    - cron: "30 11 * * *"   # 07:30 EDT (Mar-Nov)
-    - cron: "30 12 * * *"   # 07:30 EST (Nov-Mar)
+    - cron: "35 11 * * *"   # 07:35 EDT (Mar-Nov); off the :00/:30 peaks, where GitHub delays or drops runs
+    - cron: "35 12 * * *"   # 07:35 EST (Nov-Mar)
 
 # One scan at a time; a late run queues behind the current one instead of killing it.
 concurrency:

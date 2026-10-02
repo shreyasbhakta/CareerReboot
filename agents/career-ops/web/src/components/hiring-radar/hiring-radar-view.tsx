@@ -103,12 +103,31 @@ function Checklist({ state, goto }: { state: State; goto: (t: Tab) => void }) {
 }
 
 /* ---------- results ---------- */
+// Sorting. Unknown dates always sort last for the date-based orders, and ties fall back to score.
+const t = (v: string | null | undefined) => { const n = v ? Date.parse(v) : NaN; return Number.isNaN(n) ? -Infinity : n; };
+const byScore = (a: any, b: any) => b.scores.overall - a.scores.overall;
+type SortKey = "score" | "recent" | "found" | "age";
+const SORTS: Record<SortKey, { label: string; cmp: (a: any, b: any) => number }> = {
+  score: { label: "Best score first", cmp: (a, b) => byScore(a, b) || t(b.publishedAt) - t(a.publishedAt) },
+  recent: { label: "Most recent signal first", cmp: (a, b) => (t(b.publishedAt) === t(a.publishedAt) ? byScore(a, b) : t(b.publishedAt) - t(a.publishedAt)) },
+  found: { label: "Newest found first", cmp: (a, b) => (t(b.discoveredAt) === t(a.discoveredAt) ? byScore(a, b) : t(b.discoveredAt) - t(a.discoveredAt)) },
+  age: { label: "Oldest signal first", cmp: (a, b) => { const x = t(a.publishedAt), y = t(b.publishedAt); if (x === y) return byScore(a, b); if (x === -Infinity) return 1; if (y === -Infinity) return -1; return x - y; } },
+};
+
 function scoreTone(n: number): "good" | "warn" | "muted" { return n >= 80 ? "good" : n >= 65 ? "warn" : "muted"; }
 
 function Results({ state, refresh, goto }: { state: State; refresh: () => void; goto: (t: Tab) => void }) {
   const data = state.results;
   const [showHidden, setShowHidden] = useState(false);
-  const signals: any[] = useMemo(() => (data?.signals ?? []).filter((s: any) => showHidden || !["DISMISSED", "CONVERTED"].includes(s.status)), [data, showHidden]);
+  const [newOnly, setNewOnly] = useState(false);
+  const [sort, setSort] = useState<SortKey>("score");
+  // Remember the sort choice across reloads (best-effort; storage may be unavailable).
+  useEffect(() => { try { const v = localStorage.getItem("hiring-radar:sort"); if (v && v in SORTS) setSort(v as SortKey); } catch { /* ignore */ } }, []);
+  const changeSort = (v: SortKey) => { setSort(v); try { localStorage.setItem("hiring-radar:sort", v); } catch { /* ignore */ } };
+  const signals: any[] = useMemo(() => {
+    const list = (data?.signals ?? []).filter((s: any) => (showHidden || !["DISMISSED", "CONVERTED"].includes(s.status)) && (!newOnly || s.status === "NEW"));
+    return [...list].sort(SORTS[sort].cmp);
+  }, [data, showHidden, newOnly, sort]);
   if (!data) {
     return (
       <Card className="p-6 text-sm text-muted">
@@ -124,7 +143,13 @@ function Results({ state, refresh, goto }: { state: State; refresh: () => void; 
         <span>{d.newDirectHiringSignals} new direct hiring</span>
         <span>{d.newRelevantJobs} new jobs</span>
         <span>{d.warmOpportunities} warm intros</span>
-        <label className="ml-auto flex items-center gap-1.5"><input type="checkbox" checked={showHidden} onChange={(e) => setShowHidden(e.target.checked)} /> show dismissed</label>
+        <label className="ml-auto flex items-center gap-1.5">Sort
+          <select value={sort} onChange={(e) => changeSort(e.target.value as SortKey)} className="rounded-md border border-border bg-surface px-1.5 py-1 text-xs text-foreground">
+            {Object.entries(SORTS).map(([k, v]) => <option key={k} value={k}>{v.label}</option>)}
+          </select>
+        </label>
+        <label className="flex items-center gap-1.5"><input type="checkbox" checked={newOnly} onChange={(e) => setNewOnly(e.target.checked)} /> new only</label>
+        <label className="flex items-center gap-1.5"><input type="checkbox" checked={showHidden} onChange={(e) => setShowHidden(e.target.checked)} /> show dismissed</label>
       </div>
       {data.dryRun && <p className="rounded-md bg-amber-500/10 px-3 py-2 text-xs text-amber-700 dark:text-amber-400">These results are from a dry run — nothing was saved to history.</p>}
       {signals.length === 0 && <Card className="p-6 text-sm text-muted">Nothing cleared the bar. Try a longer window or a lower minimum score on the Run tab.</Card>}

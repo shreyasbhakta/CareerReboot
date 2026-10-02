@@ -12,10 +12,10 @@ const wf = yaml.load(readFileSync(wfPath, 'utf8'));
 const raw = readFileSync(wfPath, 'utf8');
 const steps = wf.jobs.scan.steps;
 
-test('triggers: manual dispatch and a daily schedule at 07:30 New York (both DST offsets)', () => {
+test('triggers: manual dispatch and a daily schedule at 07:35 New York (both DST offsets)', () => {
   assert.ok('workflow_dispatch' in wf.on);
   const crons = wf.on.schedule.map((s) => s.cron);
-  assert.deepEqual(crons.sort(), ['30 11 * * *', '30 12 * * *']);
+  assert.deepEqual(crons.sort(), ['35 11 * * *', '35 12 * * *']);
 });
 test('no concurrent runs; in-flight runs are never cancelled', () => {
   assert.equal(wf.concurrency.group, 'hiring-radar');

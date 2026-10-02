@@ -154,7 +154,7 @@ Reused from career-ops (not duplicated): `lib/cli-flags`, `lib/is-main-module`, 
 
 `.github/workflows/hiring-radar.yml` — manual (`workflow_dispatch`: days, min score, source, dry-run) and daily.
 
-* **Schedule:** 07:30 `America/New_York`. Cron is UTC and ignores DST, so both `30 11` (EDT) and `30 12` (EST) are scheduled and a gate step runs only the one that is 07:xx in New York.
+* **Schedule:** ~07:35 `America/New_York` (minute 35 avoids the :00/:30 peaks where GitHub delays or drops scheduled runs). Cron is UTC and ignores DST, so both `35 11` (EDT) and `35 12` (EST) are scheduled and a gate step runs only the one that is 07:xx in New York.
 * `concurrency: hiring-radar`, `cancel-in-progress: false`; `permissions: contents: read`; 20-minute timeout.
 * Installs with `--ignore-scripts` (career-ops' postinstall downloads Chromium, which is unused), runs the hiring-radar suite and career-ops lint, restores history from `actions/cache`, scans, publishes the digest to the job summary and uploads the three output files for 14 days.
 * **Does not commit.** `data/` is gitignored by design (personal data). Persistence is the cache.
