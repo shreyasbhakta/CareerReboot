@@ -353,3 +353,12 @@ test('set-status --all resets every row (TSV and JSON)', async () => {
   assert.ok(rows.every((r) => r.split('\t')[19] === 'NEW'));
   assert.ok(JSON.parse(readFileSync(join(deps.dataDir, 'hiring-signals.json'), 'utf8')).signals.every((s) => s.status === 'NEW'));
 });
+
+test('connections added later are matched against already-saved signals on the next run', async () => {
+  const collectors = { 'web-search': fakeSearch([post(1, "I'm hiring a Forward Deployed Engineer at Example AI in New York. Python.")]) };
+  const dir = dataDir();
+  await runScan(opts({ sources: ['web-search'] }), base({ dataDir: dir, collectors, connectionsPath: '/nonexistent.csv' }));
+  assert.equal(JSON.parse(readFileSync(join(dir, 'hiring-signals.json'), 'utf8')).signals[0].metadata.warm.status, 'NO_CONNECTION');
+  await runScan(opts({ sources: ['web-search'] }), base({ dataDir: dir, collectors, connectionsPath: conns }));
+  assert.equal(JSON.parse(readFileSync(join(dir, 'hiring-signals.json'), 'utf8')).signals[0].metadata.warm.status, 'WARM_INTRO_AVAILABLE');
+});
