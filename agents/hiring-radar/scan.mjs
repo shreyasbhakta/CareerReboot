@@ -288,6 +288,9 @@ export async function runScan(opts = {}, deps = {}) {
   }
   llm.flush();
 
+  // Connections can be added (or updated) after a signal was first stored, so re-match saved rows every run.
+  if (conns.loaded) for (const h of hist.signals) h.warm = matchWarm(h, conns);
+
   // ---- merge, render ---------------------------------------------------------------------------------
   const merged = mergeHistory(hist.signals, retained.map((s) => ({ ...s, warm: s.warm })), { retentionDays: cfg.output.retention_days, now });
   const digest = buildDigest(merged, cfg, { now, minScore, days });
