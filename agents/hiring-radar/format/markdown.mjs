@@ -1,4 +1,5 @@
 import { formatEt, humanAge } from '../lib/dates.mjs';
+import { secondDegreeSearchUrl } from '../storage/connections.mjs';
 
 const TYPE_LABEL = {
   DIRECT_HIRING_POST: 'Direct hiring post', HIRING_ANNOUNCEMENT: 'Hiring announcement', JOB_POSTING: 'Job posting',
@@ -31,6 +32,7 @@ function item(s, i) {
     `   - Hiring person: ${personLine(s.person)}`,
     `   - Warm connection: ${warmLine(s.warm)}`,
     `   - Link: ${s.sourceUrl}`,
+    ...(s.company?.name ? [`   - Connections of connections (opens LinkedIn 2nd-degree search): ${secondDegreeSearchUrl(s.company.name)}`] : []),
     `   - Signal: "${clip(s.text, 260)}"`,
     `   - Why this matches: ${(s.why?.length ? s.why : ['Role/skill overlap']).join('; ')}`,
     `   - Score detail: ${s.technicalBreakdown.map((b) => `${b.label} ${b.points >= 0 ? '+' : ''}${b.points}`).join(', ')}`,

@@ -25,6 +25,7 @@ import { createRoleMatcher } from './extractors/role.mjs';
 import { buildSignal, scoreAndAnnotate, detectSpikes, rankSignals } from './pipeline.mjs';
 import { dedupeSignals } from './storage/normalize.mjs';
 import { loadHistory, writeHistory, mergeHistory, knownKeys } from './storage/history.mjs';
+import { loadTombstones } from './set-status.mjs';
 import { connectionsPath, loadConnections, matchWarm } from './storage/connections.mjs';
 import { createLlm } from './llm/router.mjs';
 import { classifyAmbiguous, explainMatch } from './llm/tasks.mjs';
@@ -134,6 +135,7 @@ export async function runScan(opts = {}, deps = {}) {
   const hist = loadHistory(paths.tsv);
   if (hist.malformed) logger.warn(`history: ${hist.malformed} malformed row(s) skipped`);
   const known = knownKeys(hist.signals, days);
+  for (const k of loadTombstones(dataDir)) known.add(k);   // results the user deleted never come back
   const conns = await loadConnections(deps.connectionsPath || connectionsPath(env));
   logger.info(conns.loaded ? `Connections loaded: ${conns.connections.length}` : `Connections not loaded (${conns.reason}); warm-intro matching is off`);
 
@@ -315,7 +317,7 @@ export async function runScan(opts = {}, deps = {}) {
   }
 
   const result = { summary, digest, json, markdown, paths, fresh: retained };
-  const note = await notify({ digest, cfg, env, http, logger }).catch((e) => ({ sent: false, reason: e.message }));
+  const note = await notify({ digest, cfg, env, http, logger, summary }).catch((e) => ({ sent: false, reason: e.message }));
   result.notification = note;
   return result;
 }

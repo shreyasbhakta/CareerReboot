@@ -116,18 +116,62 @@ const SORTS: Record<SortKey, { label: string; cmp: (a: any, b: any) => number }>
 
 function scoreTone(n: number): "good" | "warn" | "muted" { return n >= 80 ? "good" : n >= 65 ? "warn" : "muted"; }
 
+type Filters = { statuses: string[]; type: string; source: string; warm: string; person: string; loc: string; role: string; minScore: number; age: string; q: string };
+const DEFAULT_FILTERS: Filters = { statuses: ["NEW", "SEEN", "REVIEWED", "CONTACTED"], type: "", source: "", warm: "", person: "", loc: "", role: "", minScore: 0, age: "", q: "" };
+const AGES: [string, string, number][] = [["", "Any age", Infinity], ["24", "Last 24 hours", 24], ["72", "Last 3 days", 72], ["168", "Last 7 days", 168]];
+const WARM_LABEL: Record<string, string> = { WARM_INTRO_AVAILABLE: "🔥 Warm intro", COMPANY_CONNECTION: "Knows someone there", NO_CONNECTION: "No connection" };
+const LOC_LABEL: Record<string, string> = { home: "NYC / NJ", remote_us: "Remote (US)", us_other: "Other US", unknown: "Not stated", non_us: "Outside US" };
+
+function applyFilters(list: any[], f: Filters) {
+  const q = f.q.trim().toLowerCase();
+  const maxAge = AGES.find((a) => a[0] === f.age)?.[2] ?? Infinity;
+  return list.filter((s) =>
+    f.statuses.includes(s.status)
+    && (!f.type || s.signalType === f.type)
+    && (!f.source || String(s.source).split(":")[0] === f.source)
+    && (!f.warm || s.metadata.warm?.status === f.warm)
+    && (!f.person || (f.person === "known" ? !!s.person : !s.person))
+    && (!f.loc || s.metadata.locationKind === f.loc)
+    && (!f.role || s.role.canonical === f.role)
+    && s.scores.overall >= f.minScore
+    && (maxAge === Infinity || (s.metadata.ageHours != null && s.metadata.ageHours <= maxAge))
+    && (!q || `${s.company.name} ${s.role.canonical} ${s.title ?? ""} ${s.text} ${s.person?.name ?? ""}`.toLowerCase().includes(q)));
+}
+
 function Results({ state, refresh, goto }: { state: State; refresh: () => void; goto: (t: Tab) => void }) {
   const data = state.results;
-  const [showHidden, setShowHidden] = useState(false);
-  const [newOnly, setNewOnly] = useState(false);
   const [sort, setSort] = useState<SortKey>("score");
-  // Remember the sort choice across reloads (best-effort; storage may be unavailable).
-  useEffect(() => { try { const v = localStorage.getItem("hiring-radar:sort"); if (v && v in SORTS) setSort(v as SortKey); } catch { /* ignore */ } }, []);
+  const [f, setF] = useState<Filters>(DEFAULT_FILTERS);
+  // Remember sort + filters across reloads (best-effort; storage may be unavailable).
+  useEffect(() => {
+    try {
+      const v = localStorage.getItem("hiring-radar:sort"); if (v && v in SORTS) setSort(v as SortKey);
+      const raw = localStorage.getItem("hiring-radar:filters"); if (raw) setF({ ...DEFAULT_FILTERS, ...JSON.parse(raw) });
+    } catch { /* ignore */ }
+  }, []);
+  const update = (patch: Partial<Filters>) => { const n = { ...f, ...patch }; setF(n); try { localStorage.setItem("hiring-radar:filters", JSON.stringify(n)); } catch { /* ignore */ } };
   const changeSort = (v: SortKey) => { setSort(v); try { localStorage.setItem("hiring-radar:sort", v); } catch { /* ignore */ } };
-  const signals: any[] = useMemo(() => {
-    const list = (data?.signals ?? []).filter((s: any) => (showHidden || !["DISMISSED", "CONVERTED"].includes(s.status)) && (!newOnly || s.status === "NEW"));
-    return [...list].sort(SORTS[sort].cmp);
-  }, [data, showHidden, newOnly, sort]);
+
+  const [picked, setPicked] = useState<string[]>([]);
+  const [bulkBusy, setBulkBusy] = useState(false);
+  const all: any[] = data?.signals ?? [];
+  const opts = useMemo(() => {
+    const uniq = (fn: (s: any) => string | null | undefined) => [...new Set(all.map(fn).filter(Boolean) as string[])].sort();
+    return { types: uniq((s) => s.signalType), sources: uniq((s) => String(s.source).split(":")[0]), roles: uniq((s) => s.role.canonical), locs: uniq((s) => s.metadata.locationKind), warms: uniq((s) => s.metadata.warm?.status) };
+  }, [all]);
+  const counts = useMemo(() => Object.fromEntries(STATUSES.map((x) => [x, all.filter((s) => s.status === x).length])), [all]);
+  const signals = useMemo(() => applyFilters(all, f).sort(SORTS[sort].cmp), [all, f, sort]);
+
+  const shownIds = signals.map((s) => s.id);
+  const pickedShown = picked.filter((id) => shownIds.includes(id));
+  const allShownPicked = shownIds.length > 0 && pickedShown.length === shownIds.length;
+  const toggle = (id: string) => setPicked((p) => (p.includes(id) ? p.filter((x) => x !== id) : [...p, id]));
+  const bulk = async (body: Record<string, unknown>, confirmText?: string) => {
+    if (confirmText && !window.confirm(confirmText)) return;
+    setBulkBusy(true);
+    try { await api("status", { ids: pickedShown, ...body }); setPicked([]); await refresh(); } catch (e) { window.alert(e instanceof Error ? e.message : "failed"); } finally { setBulkBusy(false); }
+  };
+
   if (!data) {
     return (
       <Card className="p-6 text-sm text-muted">
@@ -136,6 +180,8 @@ function Results({ state, refresh, goto }: { state: State; refresh: () => void; 
     );
   }
   const d = data.digest;
+  const sel = "rounded-md border border-border bg-surface px-1.5 py-1 text-xs text-foreground";
+  const isDefault = JSON.stringify(f) === JSON.stringify(DEFAULT_FILTERS);
   return (
     <div className="space-y-4">
       <div className="flex flex-wrap items-center gap-x-5 gap-y-1 text-xs text-muted">
@@ -143,18 +189,65 @@ function Results({ state, refresh, goto }: { state: State; refresh: () => void; 
         <span>{d.newDirectHiringSignals} new direct hiring</span>
         <span>{d.newRelevantJobs} new jobs</span>
         <span>{d.warmOpportunities} warm intros</span>
-        <label className="ml-auto flex items-center gap-1.5">Sort
-          <select value={sort} onChange={(e) => changeSort(e.target.value as SortKey)} className="rounded-md border border-border bg-surface px-1.5 py-1 text-xs text-foreground">
-            {Object.entries(SORTS).map(([k, v]) => <option key={k} value={k}>{v.label}</option>)}
-          </select>
-        </label>
-        <label className="flex items-center gap-1.5"><input type="checkbox" checked={newOnly} onChange={(e) => setNewOnly(e.target.checked)} /> new only</label>
-        <label className="flex items-center gap-1.5"><input type="checkbox" checked={showHidden} onChange={(e) => setShowHidden(e.target.checked)} /> show dismissed</label>
       </div>
       <ScanSummary scan={data.scan} signals={data.signals} />
+
+      <Card className="space-y-3 p-3 text-xs">
+        <div className="flex flex-wrap items-center gap-1.5">
+          <span className="mr-1 text-muted">Status</span>
+          {STATUSES.map((x) => {
+            const on = f.statuses.includes(x);
+            return (
+              <button key={x} onClick={() => update({ statuses: on ? f.statuses.filter((y) => y !== x) : [...f.statuses, x] })}
+                className={cn("rounded-full border px-2.5 py-1", on ? "border-brand bg-brand/10 text-foreground" : "border-border text-muted hover:text-foreground")}>
+                {x.toLowerCase()} <span className="text-faint">{counts[x] ?? 0}</span>
+              </button>
+            );
+          })}
+          <button className="ml-1 text-brand underline" onClick={() => update({ statuses: [...STATUSES] })}>all</button>
+        </div>
+        <div className="grid gap-2 sm:grid-cols-3 lg:grid-cols-4">
+          <label className="flex flex-col gap-1">Search<input className={sel} placeholder="company, role, person, text" value={f.q} onChange={(e) => update({ q: e.target.value })} /></label>
+          <label className="flex flex-col gap-1">Sort
+            <select className={sel} value={sort} onChange={(e) => changeSort(e.target.value as SortKey)}>{Object.entries(SORTS).map(([k, v]) => <option key={k} value={k}>{v.label}</option>)}</select></label>
+          <label className="flex flex-col gap-1">Signal type
+            <select className={sel} value={f.type} onChange={(e) => update({ type: e.target.value })}><option value="">All types</option>{opts.types.map((x) => <option key={x} value={x}>{labelType(x)}</option>)}</select></label>
+          <label className="flex flex-col gap-1">Source
+            <select className={sel} value={f.source} onChange={(e) => update({ source: e.target.value })}><option value="">All sources</option>{opts.sources.map((x) => <option key={x}>{x}</option>)}</select></label>
+          <label className="flex flex-col gap-1">Connection
+            <select className={sel} value={f.warm} onChange={(e) => update({ warm: e.target.value })}><option value="">Any</option>{opts.warms.map((x) => <option key={x} value={x}>{WARM_LABEL[x] ?? x}</option>)}</select></label>
+          <label className="flex flex-col gap-1">Hiring person
+            <select className={sel} value={f.person} onChange={(e) => update({ person: e.target.value })}><option value="">Any</option><option value="known">Identified</option><option value="none">Not identified</option></select></label>
+          <label className="flex flex-col gap-1">Location
+            <select className={sel} value={f.loc} onChange={(e) => update({ loc: e.target.value })}><option value="">Anywhere</option>{opts.locs.map((x) => <option key={x} value={x}>{LOC_LABEL[x] ?? x}</option>)}</select></label>
+          <label className="flex flex-col gap-1">Role
+            <select className={sel} value={f.role} onChange={(e) => update({ role: e.target.value })}><option value="">All roles</option>{opts.roles.map((x) => <option key={x}>{x}</option>)}</select></label>
+          <label className="flex flex-col gap-1">Signal age
+            <select className={sel} value={f.age} onChange={(e) => update({ age: e.target.value })}>{AGES.map(([v, l]) => <option key={v} value={v}>{l}</option>)}</select></label>
+          <label className="flex flex-col gap-1">Min score: {f.minScore}
+            <input type="range" min={0} max={100} step={5} value={f.minScore} onChange={(e) => update({ minScore: Number(e.target.value) })} /></label>
+        </div>
+        <div className="flex items-center gap-3 text-muted">
+          <span>Showing <span className="font-medium text-foreground">{signals.length}</span> of {all.length}</span>
+          {!isDefault && <button className="text-brand underline" onClick={() => update({ ...DEFAULT_FILTERS })}>Reset filters</button>}
+          <label className="ml-auto flex items-center gap-1.5"><input type="checkbox" checked={allShownPicked} onChange={(e) => setPicked(e.target.checked ? shownIds : picked.filter((id) => !shownIds.includes(id)))} /> select all shown</label>
+        </div>
+        {pickedShown.length > 0 && (
+          <div className="flex flex-wrap items-center gap-2 rounded-md bg-brand/10 px-3 py-2">
+            <span className="font-medium text-foreground">{pickedShown.length} selected</span>
+            <select disabled={bulkBusy} className={sel} value="" onChange={(e) => e.target.value && bulk({ status: e.target.value })}>
+              <option value="">Mark as…</option>{STATUSES.map((x) => <option key={x} value={x}>{x.toLowerCase()}</option>)}
+            </select>
+            <Button size="sm" variant="outline" disabled={bulkBusy} onClick={() => bulk({ status: "DISMISSED" })}>Dismiss</Button>
+            <Button size="sm" variant="outline" disabled={bulkBusy} className="text-red-600" onClick={() => bulk({ delete: true }, `Permanently delete ${pickedShown.length} result${pickedShown.length === 1 ? "" : "s"}? They will not come back on later scans.`)}>Delete</Button>
+            <button className="ml-auto text-muted underline" onClick={() => setPicked([])}>clear selection</button>
+          </div>
+        )}
+      </Card>
+
       {data.dryRun && <p className="rounded-md bg-amber-500/10 px-3 py-2 text-xs text-amber-700 dark:text-amber-400">These results are from a dry run — nothing was saved to history.</p>}
-      {signals.length === 0 && <Card className="p-6 text-sm text-muted">Nothing cleared the bar. Try a longer window or a lower minimum score on the Run tab.</Card>}
-      {signals.map((s) => <SignalCard key={s.id} s={s} refresh={refresh} />)}
+      {signals.length === 0 && <Card className="p-6 text-sm text-muted">Nothing matches these filters. {!isDefault && <button className="text-brand underline" onClick={() => update({ ...DEFAULT_FILTERS })}>Reset filters</button>}</Card>}
+      {signals.map((s) => <SignalCard key={s.id} s={s} refresh={refresh} selected={picked.includes(s.id)} onToggle={() => toggle(s.id)} />)}
     </div>
   );
 }
@@ -181,7 +274,7 @@ function ScanSummary({ scan, signals }: { scan: any; signals: any[] }) {
   );
 }
 
-function SignalCard({ s, refresh }: { s: any; refresh: () => void }) {
+function SignalCard({ s, refresh, selected, onToggle }: { s: any; refresh: () => void; selected: boolean; onToggle: () => void }) {
   const [open, setOpen] = useState(false);
   const [busy, setBusy] = useState(false);
   const c = s.scores.components;
@@ -191,8 +284,9 @@ function SignalCard({ s, refresh }: { s: any; refresh: () => void }) {
     try { await api("status", { id: s.id, status }); await refresh(); } finally { setBusy(false); }
   };
   return (
-    <Card className="p-4">
+    <Card className={cn("p-4", selected && "ring-2 ring-brand/60")}>
       <div className="flex items-start gap-3">
+        <input type="checkbox" aria-label="Select result" className="mt-1.5" checked={selected} onChange={onToggle} />
         <Badge tone={scoreTone(s.scores.overall)} className="mt-0.5 text-sm">{s.scores.overall}</Badge>
         <div className="min-w-0 flex-1">
           <div className="flex flex-wrap items-center gap-2">
@@ -214,6 +308,7 @@ function SignalCard({ s, refresh }: { s: any; refresh: () => void }) {
         </div>
         <div className="flex shrink-0 flex-col items-end gap-1.5">
           <a href={s.sourceUrl} target="_blank" rel="noreferrer" className="inline-flex items-center gap-1 text-xs text-brand hover:underline">Open <ExternalLink className="size-3" /></a>
+          {s.metadata.secondDegreeUrl && <a href={s.metadata.secondDegreeUrl} target="_blank" rel="noreferrer" title="Opens LinkedIn people search filtered to 2nd-degree connections who mention this company — in your own session" className="text-xs text-muted hover:text-foreground hover:underline">Friends of friends ↗</a>}
           <select disabled={busy} value={s.status} onChange={(e) => setStatus(e.target.value)} className="rounded-md border border-border bg-surface px-1.5 py-1 text-xs">
             {STATUSES.map((x) => <option key={x}>{x}</option>)}
           </select>

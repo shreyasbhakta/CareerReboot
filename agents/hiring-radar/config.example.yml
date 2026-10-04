@@ -271,8 +271,10 @@ output:
 
 notify:
   enabled: false                # or HIRING_RADAR_NOTIFY=true; webhook URL via HIRING_RADAR_WEBHOOK_URL
-  min_score: 80
-  max_items: 5
+  scope: new                    # new = every new result of this run · all = everything on your list
+  min_score: null               # null = no extra floor (the report floor still applies); set e.g. 70 to trim
+  max_items: 60                 # safety cap per run (sent in several messages, best score first)
+  heartbeat: true               # when nothing is new, send a one-line "scan finished, 0 new" message
 
 http:
   timeout_ms: 15000
