@@ -1,7 +1,7 @@
 // Deterministic "why it matches" + outreach angle. Draft-only context — this
 // module never contacts anyone. Proof points come from career-ops' profile.yml.
 
-export function proofPointsFor(groups, matchedSkills, cfg) {
+function proofPointsFor(groups, matchedSkills, cfg) {
   const kw = cfg.outreach?.group_proof_keywords || {};
   const wanted = new Set(groups.flatMap((g) => kw[g] || []));
   return (cfg.profile.proof_points || []).filter((p) => {

@@ -2,7 +2,7 @@
 // minimal profile summary — never contact details, phone, email or address.
 import { truncate } from '../lib/text.mjs';
 
-export function profileSummary(cfg) {
+function profileSummary(cfg) {
   const roles = cfg.profile.target_roles || cfg.role_families.filter((f) => f.tier === 'target').map((f) => f.label);
   const skills = Object.values(cfg.technical.skills).flat().filter((s) => s.points >= 3).map((s) => s.name);
   return `Target roles: ${roles.join(', ')}. Strong skills: ${skills.join(', ')}. Mid-level (about 3 years), US-based, open to NYC/NJ, remote US, relocation.`;

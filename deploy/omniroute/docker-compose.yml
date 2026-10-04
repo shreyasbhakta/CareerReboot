@@ -1,0 +1,18 @@
+# OmniRoute — local OpenAI-compatible AI gateway (MIT, github.com/diegosouzapw/OmniRoute).
+# One endpoint with provider fallback and free-tier routing. Hiring Radar uses it via
+#   MODEL_PROVIDER=omniroute  MODEL_BASE_URL=http://localhost:20128/v1  MODEL_NAME=auto
+# Bound to loopback only; do not expose this port.
+services:
+  omniroute:
+    image: diegosouzapw/omniroute:latest
+    container_name: careerreboot-omniroute
+    restart: unless-stopped
+    stop_grace_period: 40s
+    ports:
+      - "127.0.0.1:20128:20128"
+    environment:
+      REQUIRE_API_KEY: "false"   # safe only because the port is published on loopback
+    volumes:
+      - omniroute-data:/app/data
+volumes:
+  omniroute-data:

@@ -23,7 +23,7 @@ export function setAllStatus(dataDir, status) {
   return signals.length;
 }
 
-export const tombstonePath = (dataDir) => join(dataDir, 'hiring-signals-deleted.txt');
+const tombstonePath = (dataDir) => join(dataDir, 'hiring-signals-deleted.txt');
 
 /** Dedup keys of deleted results. A scan treats them as "already seen" so a deleted result never comes back. */
 export function loadTombstones(dataDir) {

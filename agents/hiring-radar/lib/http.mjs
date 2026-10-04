@@ -3,7 +3,7 @@
 // HTTP 429 handling, and request accounting. fetch/sleep are injectable so
 // tests never touch the network or wait on real timers.
 
-export const defaultSleep = (ms) => new Promise((r) => setTimeout(r, ms));
+const defaultSleep = (ms) => new Promise((r) => setTimeout(r, ms));
 
 export function parseRetryAfter(value, now = Date.now()) {
   if (!value) return null;

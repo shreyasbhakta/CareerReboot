@@ -15,7 +15,7 @@ export function personScore(person, cfg) {
   return Math.round(base * factor);
 }
 
-export function companyScore(company, text, cfg, { tracked = false } = {}) {
+function companyScore(company, text, cfg, { tracked = false } = {}) {
   const cr = cfg.scoring.company_relevance;
   if (!company?.name) return 0;
   let s = cr.base;

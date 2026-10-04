@@ -1,13 +1,6 @@
-// Provider-agnostic LLM router with ordered fallback.
-//
-//   MODEL_PROVIDER=openai|anthropic|gemini|openrouter|omniroute|ollama
-//   MODEL_NAME=<model id>            (optional; defaults in config)
-//   MODEL_BASE_URL=<openai-compatible base URL>   (OmniRoute / OpenRouter / Ollama / Azure proxy)
-//
-// Keys: OPENAI_API_KEY, ANTHROPIC_API_KEY, GEMINI_API_KEY, OPENROUTER_API_KEY, OMNIROUTE_API_KEY.
-// The configured provider is tried first, then the rest of llm.providers that
-// have credentials. Every failure degrades to "no LLM answer" — callers must
-// treat a null result as normal.
+// Provider-agnostic LLM router with ordered fallback (openai-compatible, anthropic, gemini).
+// MODEL_PROVIDER picks the first provider; MODEL_NAME / MODEL_BASE_URL override model and endpoint
+// (OmniRoute, OpenRouter, Ollama). Any failure degrades to "no answer": callers must handle null.
 import { existsSync, readFileSync, writeFileSync, mkdirSync } from 'node:fs';
 import { dirname } from 'node:path';
 import { createHttp } from '../lib/http.mjs';

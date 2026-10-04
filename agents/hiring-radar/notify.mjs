@@ -13,7 +13,7 @@ function line(s) {
 }
 
 /** Items to announce: this run's NEW results (or everything shown, with scope "all"), best first. */
-export function selectItems(digest, cfg) {
+function selectItems(digest, cfg) {
   const n = cfg.notify;
   // "New" for notifications = found by THIS run (digest.freshIds). Unread results from earlier runs keep
   // status NEW in the dashboard but are not announced twice.
@@ -42,9 +42,6 @@ export function buildMessages(digest, cfg, summary) {
   if (cur) msgs.push(cur);
   return msgs;
 }
-
-// Kept for callers/tests that want a single string.
-export const buildMessage = (digest, cfg, summary) => buildMessages(digest, cfg, summary)[0] ?? null;
 
 export async function notify({ digest, cfg, env, http, logger, summary, sleep = (ms) => new Promise((r) => setTimeout(r, ms)) }) {
   if (!cfg.notify.enabled) return { sent: false, reason: 'disabled' };

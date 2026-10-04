@@ -10,7 +10,7 @@ import { mapLimit } from '../lib/http.mjs';
 const providerDir = join(CAREER_OPS_DIR, 'providers');
 
 /** Companies to sweep: portals.yml tracked_companies when present, else config. */
-export function candidateCompanies(cfg, env = process.env) {
+function candidateCompanies(cfg, env = process.env) {
   const root = env.CAREER_OPS_ROOT || env.CAREER_OPS_DATA_DIR || CAREER_OPS_DIR;
   const portals = env.CAREER_OPS_PORTALS || join(resolve(CAREER_OPS_DIR, root), 'portals.yml');
   let list = [];

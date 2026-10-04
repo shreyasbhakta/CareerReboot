@@ -2,7 +2,7 @@
 // from config; nothing about the candidate is hardcoded here.
 import { reEscape } from '../lib/text.mjs';
 
-export function normalizeRoleText(s) {
+function normalizeRoleText(s) {
   return String(s ?? '')
     .toLowerCase()
     .replace(/[’‘]/g, "'")

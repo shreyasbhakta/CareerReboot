@@ -75,7 +75,7 @@ export function ReportView({
   return (
     <div className="mx-auto max-w-3xl px-6 py-8">
       <Link
-        href="/"
+        href="/dashboard"
         className="inline-flex items-center gap-1.5 text-sm text-muted transition-colors hover:text-brand"
       >
         <ArrowLeft className="size-4" /> Dashboard

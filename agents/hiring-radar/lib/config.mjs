@@ -27,7 +27,7 @@ function readYaml(path) {
 }
 
 /** Pull canonical values out of career-ops' profile.yml without copying them into this module. */
-export function profileOverlay(profilePath) {
+function profileOverlay(profilePath) {
   if (!existsSync(profilePath)) return {};
   let p;
   try { p = readYaml(profilePath); } catch { return {}; }

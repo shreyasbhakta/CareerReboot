@@ -120,16 +120,16 @@ All are gitignored by career-ops' `data/*` rule. `HIRING_RADAR_DATA_DIR` redirec
 
 Dedup keys (any match ⇒ duplicate): canonical URL · company+role+person within the date window · company+role+text fingerprint · for jobs, company+title+location.
 
-## 7. Decisions on the external repositories
+## 7. External tools: how each is used
 
-Checked on 2026-10-01 (GitHub metadata and README).
+Evaluated 2026-10-01 to 2026-10-04 (README, license, activity, install requirements, runtime fit).
 
-| Repo | What it is | License / activity | Decision |
+| Tool | License | Where it fits | Integration |
 |---|---|---|---|
-| **agentskills/agentskills** | The open `SKILL.md` format (frontmatter `name`+`description`, optional scripts/references). | Apache-2.0, pushed 2026-08 | **Adopted — as a format, not a dependency.** The repo already uses `SKILL.md`; `agents/hiring-radar/SKILL.md` and four sub-skills follow the spec and a test validates frontmatter and name↔directory. Only the semantic steps are skills; HTTP/parse/dedup/score stay as code. |
-| **OmniRoute** (diegosouzapw) | A self-hosted TypeScript AI **gateway**: one OpenAI-compatible endpoint fronting hundreds of providers with quota-aware fallback. | MIT, very active | **Not installed; supported by configuration.** It is a server to run and operate, which a once-a-day GitHub Action does not justify. Because it speaks the OpenAI protocol, `MODEL_PROVIDER=omniroute MODEL_BASE_URL=http://…/v1` already routes through it. The built-in router provides provider order + fallback without it. |
-| **Ponytail** (dietrichgebert) | A prompt/skill that makes *coding agents* write less code ("laziest senior dev"). | MIT, active | **Rejected.** It is developer-time guidance for an editing agent, not a runtime component. It solves nothing in a scanner and adds nothing to execute. |
-| **Graphify** (Graphify-Labs) | A Python/AST tool that turns a *codebase* and docs into a queryable knowledge graph for coding agents. | Apache-2.0, very active | **Rejected.** Wrong domain (code graphs, not people/company/job entities), adds a Python runtime to a Node pipeline, and the relationship set here is tiny. |
+| **Agent Skills** | Apache-2.0 | Skill definitions | `SKILL.md` format for `agents/hiring-radar/skills/*`, validated by a test. Format only, no code. |
+| **Ponytail** | MIT | Development (coding agents) | Rule ladder adapted in `AGENTS.md`; Claude Code plugin pre-registered in `.claude/settings.json`. Not a runtime dependency. Applied here as a review lens: unused exports and dead code were removed. |
+| **Graphify** | Apache-2.0 | Development (code navigation) | Installed with `uv tool install graphifyy`; project rules in `CLAUDE.md`; `npm run graph` rebuilds the AST-only graph (no API cost). Only `GRAPH_REPORT.md` is committed. Cuts agent token use by answering structure questions from the graph instead of reading files. |
+| **OmniRoute** | MIT | Optional runtime model gateway | `deploy/omniroute/docker-compose.yml` (loopback only). Selected with `MODEL_PROVIDER=omniroute`; speaks the OpenAI protocol, so the router needs no special code. It needs at least one provider key configured in its dashboard: its keyless free tier rejected requests from non-OpenCode clients during testing (HTTP 403). |
 
 **Relationship model.** The entity graph (Person → Company → Job → Signal → Connection → Outreach) is represented by fields on each signal row (`person`, `company`, `role`, `warm.connections`, `status`) plus a join to the connections export at match time. At daily volumes (hundreds of rows) a graph store has no benefit; the TSV + JSON are enough and diff-able. If an interactive graph view is ever wanted, `hiring-signals.json` already contains the nodes and edges.
 
@@ -138,6 +138,7 @@ Checked on 2026-10-01 (GitHub metadata and README).
 | Dependency | Why | Check |
 |---|---|---|
 | `js-yaml@^5` (hiring-radar) | Parse YAML config. | Already used by career-ops (same major, MIT). `npm audit`: 0 vulnerabilities. |
+| `motion` (dashboard, MIT) | Launcher animation. | Maintained, MIT, tree-shaken client bundle. |
 | *(none else)* | HTTP is `fetch`; tests are `node:test`; env loading is `process.loadEnvFile`. | — |
 
 Reused from career-ops (not duplicated): `lib/cli-flags`, `lib/is-main-module`, `path-resolver`, `linkedin-join` (parser + matcher), `find-hiring-manager`, `providers/_registry` + `_http` + ATS providers, `hackernews` helpers.

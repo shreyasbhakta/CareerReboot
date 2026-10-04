@@ -18,7 +18,7 @@ export type NavItem = {
 // destination anymore, so there's no second, competing representation of the
 // same workflow in the main nav.
 export const NAV_ITEMS: NavItem[] = [
-  { href: "/", label: "Dashboard", icon: LayoutDashboard },
+  { href: "/dashboard", label: "Dashboard", icon: LayoutDashboard },
   { href: "/explore", label: "Explore", icon: Compass, chip: "New" },
   { href: "/research", label: "Research", icon: Sparkles, chip: "Beta" },
   { href: "/followups", label: "Follow-ups", icon: Send },
@@ -30,5 +30,5 @@ export const NAV_ITEMS: NavItem[] = [
 ];
 
 export function isActivePath(href: string, pathname: string): boolean {
-  return href === "/" ? pathname === "/" : pathname.startsWith(href);
+  return pathname.startsWith(href);
 }

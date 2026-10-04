@@ -11,7 +11,7 @@ import { collector as hn } from '../collectors/hn.mjs';
 import { collector as jobsCollector, pickCompanies } from '../collectors/jobs.mjs';
 import { detectSpikes, buildSignal } from '../pipeline.mjs';
 import { buildDigest } from '../format/digest.mjs';
-import { buildMessage, notify } from '../notify.mjs';
+import { buildMessages, notify } from '../notify.mjs';
 import { toPublicSignal } from '../format/json.mjs';
 
 const ROOT = resolve(import.meta.dirname, '..');
@@ -282,9 +282,9 @@ test('notifications are optional: off by default; when on, EVERY new result goes
   // heartbeat when nothing is new; silent when heartbeat off
   c.notify.scope = 'new';
   const quiet = { ranked: [mkSig(5, 70, 'SEEN')] };
-  assert.match(buildMessage(quiet, c, { discovered: 100, deduplicated: 40 }), /no new results \(100 checked, 40 already seen\)/);
+  assert.match(buildMessages(quiet, c, { discovered: 100, deduplicated: 40 })[0], /no new results \(100 checked, 40 already seen\)/);
   c.notify.heartbeat = false;
-  assert.equal(buildMessage(quiet, c, {}), null);
+  assert.deepEqual(buildMessages(quiet, c, {}), []);
   // a failing webhook never throws
   const failing = await notify({ digest: d, cfg: c, env: { HIRING_RADAR_WEBHOOK_URL: 'https://hooks.test/x' }, http: { postJson: async () => { throw new Error('nope'); } }, logger: silentLogger, sleep: async () => {} });
   assert.equal(failing.sent, false);
@@ -408,7 +408,7 @@ test('unread NEW results from earlier runs are not announced again; only this ru
   const c = cfg();
   const mkSig = (i) => { const x = { ...job(i, 'Backend Engineer', `Co${i}`), status: 'NEW', warm: { status: 'NO_CONNECTION', connections: [] } }; return x; };
   const [a, b] = [mkSig(1), mkSig(2)];
-  const msgs = buildMessage({ ranked: [a, b], freshIds: new Set([b.id]) }, c, {});
+  const msgs = buildMessages({ ranked: [a, b], freshIds: new Set([b.id]) }, c, {}).join('\n');
   assert.match(msgs, /Co2/);
   assert.doesNotMatch(msgs, /Co1/);
 });

@@ -1,16 +1,9 @@
 #!/usr/bin/env node
 /**
- * Hiring Radar — "Who is actively hiring for roles that match me RIGHT NOW?"
- *
- *   node agents/hiring-radar/scan.mjs --dry-run
- *   node agents/hiring-radar/scan.mjs --days 3 --min-score 75
- *   node agents/hiring-radar/scan.mjs --source jobs --limit 100
- *
- * Read-only toward the outside world: it never sends messages, applies, or
- * submits forms. Outputs (gitignored, user layer) land in career-ops data/:
- *   hiring-signals.tsv   history ledger (human-editable status column)
- *   hiring-signals.json  machine-readable view for the dashboard
- *   hiring-radar.md      the daily digest
+ * Hiring Radar scanner: who is actively hiring for roles that match the profile, right now.
+ * Usage: node scan.mjs [--dry-run] [--days N] [--source S] [--min-score N]  (see --help)
+ * Read-only toward third parties: never messages, applies or submits anything.
+ * Writes hiring-signals.{tsv,json} and hiring-radar.md under career-ops data/.
  */
 import { join, resolve } from 'node:path';
 import { readFileSync, mkdirSync, writeFileSync, renameSync } from 'node:fs';
