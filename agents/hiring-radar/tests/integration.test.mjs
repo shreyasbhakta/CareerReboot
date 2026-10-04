@@ -49,7 +49,7 @@ test('full scan over fake collectors writes TSV/JSON/MD, scores, finds people an
   assert.match(md, /Suggested outreach angle \(draft only/);
 });
 
-test('second run deduplicates against history and marks old rows SEEN', async () => {
+test('second run deduplicates against history and leaves unread rows NEW', async () => {
   const deps = base({ collectors: { 'web-search': fakeSearch([post(1, "I'm hiring a backend engineer. Java, Kafka. New York.")]), hn: { id: 'hn', discover: async () => ({ raw: [], errors: [] }), normalize: () => null }, jobs: { id: 'jobs', discover: async () => ({ raw: [], errors: [] }), normalize: () => null } } });
   await runScan(opts(), deps);
   const r2 = await runScan(opts(), deps);
@@ -57,7 +57,7 @@ test('second run deduplicates against history and marks old rows SEEN', async ()
   assert.equal(r2.summary.retained, 0);
   const tsv = readFileSync(join(deps.dataDir, 'hiring-signals.tsv'), 'utf8').trim().split('\n');
   assert.equal(tsv.length, 2, 'header + exactly one row');
-  assert.ok(tsv[1].split('\t')[19] === 'SEEN');
+  assert.ok(tsv[1].split('\t')[19] === 'NEW');
 });
 
 test('duplicate raw results inside one source collapse to one signal', async () => {
@@ -260,7 +260,7 @@ test('notifications are optional: off by default; when on, EVERY new result goes
   const c = cfg();
   const mkSig = (i, score, status = 'NEW') => { const x = { ...job(i, 'Backend Engineer', `Company${i}`), status, warm: { status: i === 1 ? 'WARM_INTRO_AVAILABLE' : 'NO_CONNECTION', connections: [] } }; x.scores.overall = score; return x; };
   const ranked = [mkSig(1, 95), ...Array.from({ length: 30 }, (_, i) => mkSig(i + 2, 70 - i)), mkSig(99, 80, 'SEEN')];
-  const d = { ranked, high: [], active: [] };
+  const d = { ranked, high: [], active: [], freshIds: new Set(ranked.filter((x) => x.status === 'NEW').map((x) => x.id)) };
   assert.deepEqual(await notify({ digest: d, cfg: c, env: {}, http: {}, logger: silentLogger }), { sent: false, reason: 'disabled' });
   c.notify.enabled = true;
   assert.equal((await notify({ digest: d, cfg: c, env: {}, http: {}, logger: silentLogger })).reason, 'no webhook');
@@ -402,4 +402,13 @@ test('delete removes results for good: gone from ledger and JSON, and a rescan d
   const again = await runScan(opts({ sources: ['web-search'] }), deps);
   assert.equal(again.summary.retained, 0, 'deleted results are remembered and not re-added');
   assert.deepEqual(JSON.parse(readFileSync(join(deps.dataDir, 'hiring-signals.json'), 'utf8')).signals.map((s) => s.id), [a]);
+});
+
+test('unread NEW results from earlier runs are not announced again; only this run\'s fresh ones', () => {
+  const c = cfg();
+  const mkSig = (i) => { const x = { ...job(i, 'Backend Engineer', `Co${i}`), status: 'NEW', warm: { status: 'NO_CONNECTION', connections: [] } }; return x; };
+  const [a, b] = [mkSig(1), mkSig(2)];
+  const msgs = buildMessage({ ranked: [a, b], freshIds: new Set([b.id]) }, c, {});
+  assert.match(msgs, /Co2/);
+  assert.doesNotMatch(msgs, /Co1/);
 });

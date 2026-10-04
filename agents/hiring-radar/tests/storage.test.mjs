@@ -55,7 +55,7 @@ test('dedup: same job on two URLs (same company/title/location)', () => {
   assert.equal(dedupeSignals([job('https://boards.greenhouse.io/acme/jobs/1'), job('https://acme.com/careers/backend?id=9')]).kept.length, 1);
 });
 
-test('history TSV roundtrip preserves signals and human-edited status; NEW becomes SEEN', () => {
+test('history TSV roundtrip preserves signals and human-edited status; NEW stays NEW until opened', () => {
   const dir = mkdtempSync(join(tmpdir(), 'hr-'));
   const path = join(dir, 'h.tsv');
   const s = { ...mk(), status: 'NEW', warm: { status: 'NO_CONNECTION', connections: [] } };
@@ -69,7 +69,7 @@ test('history TSV roundtrip preserves signals and human-edited status; NEW becom
   assert.equal(signals[0].scores.overall, s.scores.overall);
   const merged = mergeHistory(signals, [], { now: NOW });
   assert.equal(merged.find((x) => x.status === 'CONTACTED').status, 'CONTACTED');
-  assert.equal(merged.filter((x) => x.status === 'SEEN').length, 1);
+  assert.equal(merged.filter((x) => x.status === 'NEW').length, 1, 'unread results are not auto-demoted by another scan');
 });
 test('history: tabs/newlines in text cannot corrupt rows; malformed rows are counted and skipped', () => {
   const dir = mkdtempSync(join(tmpdir(), 'hr-'));

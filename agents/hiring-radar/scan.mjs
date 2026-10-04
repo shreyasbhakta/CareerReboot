@@ -304,6 +304,7 @@ export async function runScan(opts = {}, deps = {}) {
   summary.modelTokens = { in: llm.stats.tokensIn, out: llm.stats.tokensOut, cacheHits: llm.stats.cacheHits };
   summary.runtimeSeconds = Math.round((Date.now() - started) / 100) / 10;
 
+  digest.freshIds = new Set(retained.map((s) => s.id));
   const markdown = toMarkdown({ digest, summary, generatedAt: now, days: viewDays });
   const json = toJson({ digest, summary, config: cfg, generatedAt: now, days: viewDays, dryRun: opts.dryRun });
 

@@ -230,6 +230,11 @@ function Results({ state, refresh, goto }: { state: State; refresh: () => void; 
         <div className="flex items-center gap-3 text-muted">
           <span>Showing <span className="font-medium text-foreground">{signals.length}</span> of {all.length}</span>
           {!isDefault && <button className="text-brand underline" onClick={() => update({ ...DEFAULT_FILTERS })}>Reset filters</button>}
+          {signals.some((x) => x.status === "NEW") && (
+            <button disabled={bulkBusy} className="text-brand underline" onClick={async () => { setBulkBusy(true); try { await api("status", { ids: signals.filter((x) => x.status === "NEW").map((x) => x.id), status: "SEEN" }); await refresh(); } finally { setBulkBusy(false); } }}>
+              mark all shown as seen
+            </button>
+          )}
           <label className="ml-auto flex items-center gap-1.5"><input type="checkbox" checked={allShownPicked} onChange={(e) => setPicked(e.target.checked ? shownIds : picked.filter((id) => !shownIds.includes(id)))} /> select all shown</label>
         </div>
         {pickedShown.length > 0 && (
@@ -279,6 +284,12 @@ function SignalCard({ s, refresh, selected, onToggle }: { s: any; refresh: () =>
   const [busy, setBusy] = useState(false);
   const c = s.scores.components;
   const warm = s.metadata.warm;
+  // Opening a NEW result marks it SEEN (also on middle-click / open-in-new-tab).
+  const markSeen = () => {
+    if (s.status !== "NEW") return;
+    fetch("/api/hiring-radar/status", { method: "POST", keepalive: true, headers: { "content-type": "application/json" }, body: JSON.stringify({ id: s.id, status: "SEEN" }) })
+      .then(() => refresh()).catch(() => { /* best-effort; the status dropdown still works */ });
+  };
   const setStatus = async (status: string) => {
     setBusy(true);
     try { await api("status", { id: s.id, status }); await refresh(); } finally { setBusy(false); }
@@ -307,7 +318,7 @@ function SignalCard({ s, refresh, selected, onToggle }: { s: any; refresh: () =>
           <p className="mt-1.5 text-xs"><span className="text-muted">Next: </span><span className="font-medium text-foreground">{s.metadata.suggestedAction}</span></p>
         </div>
         <div className="flex shrink-0 flex-col items-end gap-1.5">
-          <a href={s.sourceUrl} target="_blank" rel="noreferrer" className="inline-flex items-center gap-1 text-xs text-brand hover:underline">Open <ExternalLink className="size-3" /></a>
+          <a href={s.sourceUrl} target="_blank" rel="noreferrer" onClick={markSeen} onAuxClick={markSeen} className="inline-flex items-center gap-1 text-xs text-brand hover:underline">Open <ExternalLink className="size-3" /></a>
           {s.metadata.secondDegreeUrl && <a href={s.metadata.secondDegreeUrl} target="_blank" rel="noreferrer" title="Opens LinkedIn people search filtered to 2nd-degree connections who mention this company — in your own session" className="text-xs text-muted hover:text-foreground hover:underline">Friends of friends ↗</a>}
           <select disabled={busy} value={s.status} onChange={(e) => setStatus(e.target.value)} className="rounded-md border border-border bg-surface px-1.5 py-1 text-xs">
             {STATUSES.map((x) => <option key={x}>{x}</option>)}

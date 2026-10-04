@@ -91,7 +91,9 @@ export function writeHistory(path, signals) {
  */
 export function mergeHistory(history, fresh, { retentionDays = 90, now = new Date() } = {}) {
   const cutoff = now.getTime() - retentionDays * 864e5;
-  const aged = history.map((s) => (s.status === 'NEW' ? { ...s, status: 'SEEN' } : s));
+  // NEW stays NEW until the user opens the result (the dashboard marks it SEEN on click), so an
+  // unread result never silently turns into "seen" just because another scan ran.
+  const aged = history;
   const kept = aged.filter((s) => {
     if (['CONTACTED', 'CONVERTED'].includes(s.status)) return true;
     const t = Date.parse(s.publishedAt || s.discoveredAt);
