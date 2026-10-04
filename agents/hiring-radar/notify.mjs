@@ -15,7 +15,10 @@ function line(s) {
 /** Items to announce: this run's NEW results (or everything shown, with scope "all"), best first. */
 export function selectItems(digest, cfg) {
   const n = cfg.notify;
-  const pool = n.scope === 'all' ? digest.ranked : digest.ranked.filter((s) => s.status === 'NEW');
+  // "New" for notifications = found by THIS run (digest.freshIds). Unread results from earlier runs keep
+  // status NEW in the dashboard but are not announced twice.
+  const fresh = digest.freshIds;
+  const pool = n.scope === 'all' ? digest.ranked : digest.ranked.filter((s) => (fresh ? fresh.has(s.id) : s.status === 'NEW'));
   const floor = n.min_score ?? 0;
   return pool.filter((s) => s.scores.overall >= floor).slice(0, n.max_items);
 }
