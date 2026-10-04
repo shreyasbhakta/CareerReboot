@@ -293,14 +293,17 @@ export async function runScan(opts = {}, deps = {}) {
 
   // ---- merge, render ---------------------------------------------------------------------------------
   const merged = mergeHistory(hist.signals, retained.map((s) => ({ ...s, warm: s.warm })), { retentionDays: cfg.output.retention_days, now });
-  const digest = buildDigest(merged, cfg, { now, minScore, days });
+  // The run's --days only limits DISCOVERY. What you see keeps at least the default window, so a quiet
+  // short-window run (e.g. --days 3 with nothing new) cannot blank the results page.
+  const viewDays = Math.max(days, cfg.recency.default_days);
+  const digest = buildDigest(merged, cfg, { now, minScore, days: viewDays });
   summary.requests = stats.requests;
   summary.modelCalls = llm.stats.calls;
   summary.modelTokens = { in: llm.stats.tokensIn, out: llm.stats.tokensOut, cacheHits: llm.stats.cacheHits };
   summary.runtimeSeconds = Math.round((Date.now() - started) / 100) / 10;
 
-  const markdown = toMarkdown({ digest, summary, generatedAt: now, days });
-  const json = toJson({ digest, summary, config: cfg, generatedAt: now, days, dryRun: opts.dryRun });
+  const markdown = toMarkdown({ digest, summary, generatedAt: now, days: viewDays });
+  const json = toJson({ digest, summary, config: cfg, generatedAt: now, days: viewDays, dryRun: opts.dryRun });
 
   if (!opts.dryRun) {
     mkdirSync(dataDir, { recursive: true });
