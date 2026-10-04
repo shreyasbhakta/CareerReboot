@@ -52,7 +52,7 @@ export function DeleteFromTracker({ n }: { n: string }) {
         return;
       }
       // Row is gone — leave the (now-orphaned) report page for the Dashboard.
-      router.push("/");
+      router.push("/dashboard");
       router.refresh();
     } catch {
       setErr("Delete failed.");

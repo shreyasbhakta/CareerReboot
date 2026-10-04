@@ -456,6 +456,7 @@ function Settings({ state, refresh }: { state: State; refresh: () => void }) {
           <Field k="OPENROUTER_API_KEY" label="OpenRouter key" secret placeholder="sk-or-…" {...p} />
           <Field k="OMNIROUTE_API_KEY" label="OmniRoute key" secret placeholder="" {...p} />
         </div>
+        <p className="text-xs text-faint">OmniRoute (one local endpoint with provider fallback): run <code>docker compose -f deploy/omniroute/docker-compose.yml up -d</code>, add one provider key in its dashboard at localhost:20128, then choose <code>omniroute</code>, base URL <code>http://localhost:20128/v1</code>, model <code>auto</code>.</p>
         <p className="text-xs text-faint">Only post snippets and a skills/roles summary are sent — never your email, phone or resume. If every provider fails, the scan still completes without a model.</p>
       </Card>
       <Card className="space-y-3 p-4">

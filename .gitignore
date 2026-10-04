@@ -7,6 +7,9 @@
 # session worktrees and lock files; .continue/ can hold model config that
 # resolves secrets from its own .env (see Continue's secrets docs) — neither
 # belongs in the repo regardless.
+/.claude/*
+!/.claude/settings.json
+!/.claude/skills/
 .claude/
 .continue/
 
@@ -28,3 +31,7 @@ Connections.csv
 * 2
 * 2.*
 * 2/
+
+# Graphify: commit only the report; the graph itself is regenerated with `npm run graph`
+**/graphify-out/*
+!**/graphify-out/GRAPH_REPORT.md

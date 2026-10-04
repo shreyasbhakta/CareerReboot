@@ -17,7 +17,7 @@ export default function JobPage({ params }: { params: Promise<{ id: string }> })
   if (!job) {
     return (
       <div className="mx-auto max-w-3xl px-6 py-10">
-        <Link href="/" className="inline-flex items-center gap-1.5 text-sm text-muted transition-colors hover:text-brand">
+        <Link href="/dashboard" className="inline-flex items-center gap-1.5 text-sm text-muted transition-colors hover:text-brand">
           <ArrowLeft className="size-4" /> Back
         </Link>
         <p className="mt-8 text-sm text-muted">

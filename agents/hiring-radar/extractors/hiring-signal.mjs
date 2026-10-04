@@ -20,7 +20,7 @@ function patterns(cfg) {
   return cache.get(cfg);
 }
 
-export function splitSentences(text) {
+function splitSentences(text) {
   return String(text ?? '')
     .replace(/[’‘]/g, "'")
     .replace(/\s+/g, ' ')

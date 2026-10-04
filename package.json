@@ -8,6 +8,8 @@
     "hiring-radar": "node agents/hiring-radar/scan.mjs",
     "hiring-radar:dry-run": "node agents/hiring-radar/scan.mjs --dry-run",
     "test": "npm --prefix agents/hiring-radar test",
-    "test:all": "npm --prefix agents/hiring-radar test && npm --prefix agents/career-ops run lint"
-  }
+    "test:all": "npm --prefix agents/hiring-radar test && npm --prefix agents/career-ops run lint",
+    "graph": "graphify update agents/hiring-radar && graphify update agents/career-ops/web/src"
+  },
+  "version": "1.1.0"
 }

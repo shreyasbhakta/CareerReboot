@@ -1,0 +1,17 @@
+cff-version: 1.2.0
+message: "If you use CareerReboot, please cite it as below, and cite career-ops, on which its pipeline is based."
+title: "CareerReboot"
+version: 1.1.0
+license: Apache-2.0
+repository-code: "https://github.com/shreyasbhakta/CareerReboot"
+authors:
+  - family-names: Bhakta
+    given-names: Shreyas
+references:
+  - type: software
+    title: "career-ops"
+    authors:
+      - family-names: Fernández de Valderrama
+        given-names: Santiago
+    repository-code: "https://github.com/career-ops-hq/career-ops"
+    license: MIT

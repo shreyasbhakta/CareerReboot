@@ -105,7 +105,7 @@ function Stat({ value, label, hint }: { value: number | string; label: string; h
       <div className="text-3xl font-semibold tabular-nums">{value}</div>
       <div className="mt-1 text-xs text-faint">{label}</div>
       {hint && (
-        <Link href="/" className="mt-2 block text-xs text-muted transition-colors hover:text-brand">
+        <Link href="/dashboard" className="mt-2 block text-xs text-muted transition-colors hover:text-brand">
           {hint}
         </Link>
       )}

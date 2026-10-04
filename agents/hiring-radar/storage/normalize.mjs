@@ -2,10 +2,6 @@
 import { canonicalUrl, normalizeText, shortHash } from '../lib/text.mjs';
 import { createHash } from 'node:crypto';
 
-export const SIGNAL_TYPES = [
-  'DIRECT_HIRING_POST', 'HIRING_ANNOUNCEMENT', 'JOB_POSTING', 'HIRING_MANAGER_ASSOCIATION',
-  'COMPANY_HIRING_SPIKE', 'RECRUITER_ACTIVITY', 'TEAM_EXPANSION', 'NEW_ROLE_CLUSTER', 'OTHER',
-];
 export const STATUSES = ['NEW', 'SEEN', 'REVIEWED', 'CONTACTED', 'DISMISSED', 'CONVERTED'];
 
 const companyKey = (c) => normalizeText(c?.name ?? c ?? '').replace(/\b(inc|llc|ltd|corp|co|company|technologies|technology|labs?)\b/g, '').replace(/\s+/g, '');

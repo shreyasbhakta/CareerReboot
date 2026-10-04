@@ -86,3 +86,24 @@ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 ```
+
+---
+
+## Dependencies and tools (not vendored)
+
+Used as libraries or run as separate processes; their code is not copied into this repository except where stated.
+
+| Component | Role | License |
+|---|---|---|
+| [Next.js](https://github.com/vercel/next.js), [React](https://github.com/facebook/react) | Dashboard framework | MIT |
+| [Tailwind CSS](https://github.com/tailwindlabs/tailwindcss), [lucide-react](https://github.com/lucide-icons/lucide) | Styling, icons | MIT, ISC |
+| [Motion](https://github.com/motiondivision/motion) | Dashboard animation | MIT |
+| [js-yaml](https://github.com/nodeca/js-yaml) | YAML configuration | MIT |
+| [Playwright](https://github.com/microsoft/playwright) | Browser automation in career-ops | Apache-2.0 |
+| [Ponytail](https://github.com/DietrichGebert/ponytail) | Coding-agent ruleset; the rule ladder is adapted in `AGENTS.md` (© DietrichGebert) | MIT |
+| [Graphify](https://github.com/Graphify-Labs/graphify) | Developer tool: code knowledge graph; only its generated `GRAPH_REPORT.md` files are committed | Apache-2.0 |
+| [OmniRoute](https://github.com/diegosouzapw/OmniRoute) | Optional local AI gateway, run via `deploy/omniroute/docker-compose.yml` (image pulled, not bundled) | MIT |
+| [SearXNG](https://github.com/searxng/searxng) | Optional self-hosted search, run via `agents/career-ops/deploy/searxng` (image pulled, not bundled) | AGPL-3.0 |
+| [Agent Skills specification](https://github.com/agentskills/agentskills) | `SKILL.md` format used by the skills in this repo | Apache-2.0 |
+
+Data services are used under their own terms: the public [Hacker News API](https://github.com/HackerNews/API) via [Algolia HN Search](https://hn.algolia.com/api), employer job-board APIs (Greenhouse, Lever, Ashby, Workday), and the [Brave Search API](https://brave.com/search/api/).

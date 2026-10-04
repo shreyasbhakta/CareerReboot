@@ -35,7 +35,7 @@ export function signalToRow(s) {
   return COLUMNS.map((c) => esc(row[c])).join('\t');
 }
 
-export function rowToSignal(cells) {
+function rowToSignal(cells) {
   const r = Object.fromEntries(COLUMNS.map((c, i) => [c, cells[i] ?? '']));
   let meta = {};
   try { meta = r.metadata_json ? JSON.parse(r.metadata_json) : {}; } catch { /* keep going with columns only */ }

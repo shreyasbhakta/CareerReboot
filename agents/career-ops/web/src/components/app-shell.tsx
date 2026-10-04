@@ -19,21 +19,14 @@ import { UsageMeter } from "@/components/usage-meter";
 // not imported here — it files bugs against the upstream repo, which isn't
 // meaningful for this personal instance.
 import { instrumentSerif } from "@/lib/fonts";
-import { NAV_ITEMS, isActivePath } from "@/lib/nav-items";
-import { LogOut } from "lucide-react";
-import { useRouter } from "next/navigation";
+import { isActivePath } from "@/lib/nav-items";
+import { MODES, navFor, useMode } from "@/lib/mode";
 
 export function AppShell({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
-  const router = useRouter();
-  async function logout() {
-    await fetch("/api/auth/logout", { method: "POST" });
-    router.push("/login");
-    router.refresh();
-  }
-  // The login page renders standalone — no sidebar/nav, no providers that
-  // immediately fire API calls the (unauthenticated) request would 401 on.
-  if (pathname === "/login") return <>{children}</>;
+  const mode = useMode();
+  // The launcher and legal pages render standalone: no sidebar and no providers that fire API calls.
+  if (pathname === "/" || pathname === "/legal") return <>{children}</>;
   return (
     <JobsProvider>
       <PipelineProvider>
@@ -49,7 +42,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
             </span>
           </Link>
           <nav className="flex flex-col gap-1">
-            {NAV_ITEMS.map(({ href, label, icon: Icon, chip }) => {
+            {navFor(mode).map(({ href, label, icon: Icon, chip }) => {
               const active = isActivePath(href, pathname);
               return (
                 <Link
@@ -73,24 +66,17 @@ export function AppShell({ children }: { children: React.ReactNode }) {
               );
             })}
           </nav>
+          <Link href="/" className="mt-3 rounded-md px-3 py-1.5 text-xs text-faint transition-colors hover:bg-surface-hover hover:text-foreground">
+            {MODES[mode].label} mode · switch
+          </Link>
 
           <WorkerPills />
 
           <div className="mt-auto space-y-3 pt-4">
             <UsageMeter />
             <div className="flex items-center justify-between px-1">
-              <span className={`${instrumentSerif.className} text-sm text-faint`}>local-first · v0</span>
-              <div className="flex items-center gap-1">
-                <button
-                  onClick={logout}
-                  aria-label="Log out"
-                  title="Log out"
-                  className="rounded-md p-1.5 text-faint transition-colors hover:bg-surface-hover hover:text-foreground"
-                >
-                  <LogOut className="size-4" />
-                </button>
-                <ThemeToggle />
-              </div>
+              <Link href="/legal" className={`${instrumentSerif.className} text-sm text-faint hover:text-muted`}>v1 · legal</Link>
+              <ThemeToggle />
             </div>
           </div>
         </aside>

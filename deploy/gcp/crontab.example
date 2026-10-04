@@ -27,3 +27,6 @@ LOG=$HOME/career-ops.log
 # role and end with you reviewing output before it goes anywhere — trigger
 # them yourself (or via a Claude Code / Codex session) per shortlisted role,
 # not on a blind timer.
+
+# Hiring Radar — once a day, 07:35 local. Discovery only; results land under agents/career-ops/data/.
+35 7 * * * cd $HOME/CareerReboot/agents/hiring-radar && node scan.mjs --days 7 >> $LOG 2>&1
