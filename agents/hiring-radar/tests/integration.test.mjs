@@ -256,20 +256,38 @@ test('digest respects caps and per-company diversity; hides DISMISSED', () => {
   assert.ok(!d.ranked.some((s) => s.status === 'DISMISSED'));
   assert.ok(d.jobs.length + d.active.length + d.high.length <= 2, 'max_per_company=2 across tiers');
 });
-test('notifications are optional: off by default, webhook payload is bounded', async () => {
+test('notifications are optional: off by default; when on, EVERY new result goes out with its score, chunked under 2000 chars', async () => {
   const c = cfg();
-  const d = { high: [{ ...job(1, 'Backend Engineer'), warm: { status: 'WARM_INTRO_AVAILABLE' } }], active: [] };
-  d.high[0].scores.overall = 95;
+  const mkSig = (i, score, status = 'NEW') => { const x = { ...job(i, 'Backend Engineer', `Company${i}`), status, warm: { status: i === 1 ? 'WARM_INTRO_AVAILABLE' : 'NO_CONNECTION', connections: [] } }; x.scores.overall = score; return x; };
+  const ranked = [mkSig(1, 95), ...Array.from({ length: 30 }, (_, i) => mkSig(i + 2, 70 - i)), mkSig(99, 80, 'SEEN')];
+  const d = { ranked, high: [], active: [] };
   assert.deepEqual(await notify({ digest: d, cfg: c, env: {}, http: {}, logger: silentLogger }), { sent: false, reason: 'disabled' });
   c.notify.enabled = true;
   assert.equal((await notify({ digest: d, cfg: c, env: {}, http: {}, logger: silentLogger })).reason, 'no webhook');
-  let body;
-  const r = await notify({ digest: d, cfg: c, env: { HIRING_RADAR_WEBHOOK_URL: 'https://hooks.test/x' }, http: { postJson: async (u, b) => { body = b; } }, logger: silentLogger });
+  const bodies = [];
+  const http = { postJson: async (u, b) => { bodies.push(b.text); } };
+  const r = await notify({ digest: d, cfg: c, env: { HIRING_RADAR_WEBHOOK_URL: 'https://hooks.test/x' }, http, logger: silentLogger, sleep: async () => {} });
   assert.equal(r.sent, true);
-  assert.match(body.text, /warm intro/);
-  const failing = await notify({ digest: d, cfg: c, env: { HIRING_RADAR_WEBHOOK_URL: 'https://hooks.test/x' }, http: { postJson: async () => { throw new Error('nope'); } }, logger: silentLogger });
+  assert.ok(bodies.length > 1, 'chunked into several messages');
+  assert.ok(bodies.every((t) => t.length <= 1900));
+  const all = bodies.join('\n');
+  assert.equal((all.match(/Backend Engineer @/g) || []).length, 31, 'all 31 NEW results, not just a top few; SEEN ones are not re-announced');
+  assert.match(all, /\*\*95\*\* Backend Engineer @ Company1.*warm intro/s);
+  assert.ok(all.indexOf('**95**') < all.indexOf('**70**'), 'best score first');
+  // scope "all" includes already-seen results; min_score trims
+  c.notify.scope = 'all'; c.notify.min_score = 79;
+  const sent2 = [];
+  await notify({ digest: d, cfg: c, env: { HIRING_RADAR_WEBHOOK_URL: 'https://hooks.test/x' }, http: { postJson: async (u, b) => { sent2.push(b.text); } }, logger: silentLogger, sleep: async () => {} });
+  assert.equal((sent2.join('\n').match(/Backend Engineer @/g) || []).length, 2);
+  // heartbeat when nothing is new; silent when heartbeat off
+  c.notify.scope = 'new';
+  const quiet = { ranked: [mkSig(5, 70, 'SEEN')] };
+  assert.match(buildMessage(quiet, c, { discovered: 100, deduplicated: 40 }), /no new results \(100 checked, 40 already seen\)/);
+  c.notify.heartbeat = false;
+  assert.equal(buildMessage(quiet, c, {}), null);
+  // a failing webhook never throws
+  const failing = await notify({ digest: d, cfg: c, env: { HIRING_RADAR_WEBHOOK_URL: 'https://hooks.test/x' }, http: { postJson: async () => { throw new Error('nope'); } }, logger: silentLogger, sleep: async () => {} });
   assert.equal(failing.sent, false);
-  assert.equal(buildMessage({ high: [], active: [] }, c), null);
 });
 test('public JSON shape has the spec fields and no raw email', () => {
   const p = toPublicSignal({ ...job(1, 'Backend Engineer'), warm: { status: 'NO_CONNECTION', connections: [] } });
@@ -361,4 +379,27 @@ test('connections added later are matched against already-saved signals on the n
   assert.equal(JSON.parse(readFileSync(join(dir, 'hiring-signals.json'), 'utf8')).signals[0].metadata.warm.status, 'NO_CONNECTION');
   await runScan(opts({ sources: ['web-search'] }), base({ dataDir: dir, collectors, connectionsPath: conns }));
   assert.equal(JSON.parse(readFileSync(join(dir, 'hiring-signals.json'), 'utf8')).signals[0].metadata.warm.status, 'WARM_INTRO_AVAILABLE');
+});
+
+test('every result links to a LinkedIn 2nd-degree search for its company (connections of connections)', async () => {
+  const { toPublicSignal } = await import('../format/json.mjs');
+  const p = toPublicSignal({ ...job(1, 'Backend Engineer', 'Acme Corp'), warm: { status: 'NO_CONNECTION', connections: [] } });
+  assert.equal(p.metadata.secondDegreeUrl, 'https://www.linkedin.com/search/results/people/?keywords=Acme%20Corp&network=%5B%22S%22%5D');
+  assert.equal(toPublicSignal({ ...job(2, 'Backend Engineer', ''), company: { name: '', confidence: 'LOW' }, warm: { status: 'NO_CONNECTION', connections: [] } }).metadata.secondDegreeUrl, null);
+});
+
+test('delete removes results for good: gone from ledger and JSON, and a rescan does not resurrect them; bulk status works', async () => {
+  const { deleteSignals, setStatusMany } = await import('../set-status.mjs');
+  const deps = base({ collectors: { 'web-search': fakeSearch([post(1, "We're hiring a backend engineer. Java. New York."), post(2, "I'm hiring an AI engineer. RAG. New York."), post(3, "We're hiring a forward deployed engineer. Python. New York.")]) } });
+  await runScan(opts({ sources: ['web-search'] }), deps);
+  let json = JSON.parse(readFileSync(join(deps.dataDir, 'hiring-signals.json'), 'utf8'));
+  const [a, b, c] = json.signals.map((s) => s.id);
+  assert.equal(setStatusMany(deps.dataDir, [a, b], 'REVIEWED'), 2);
+  assert.equal(deleteSignals(deps.dataDir, [b, c]), 2);
+  json = JSON.parse(readFileSync(join(deps.dataDir, 'hiring-signals.json'), 'utf8'));
+  assert.deepEqual(json.signals.map((s) => s.id), [a]);
+  assert.equal(readFileSync(join(deps.dataDir, 'hiring-signals.tsv'), 'utf8').trim().split('\n').length, 2);
+  const again = await runScan(opts({ sources: ['web-search'] }), deps);
+  assert.equal(again.summary.retained, 0, 'deleted results are remembered and not re-added');
+  assert.deepEqual(JSON.parse(readFileSync(join(deps.dataDir, 'hiring-signals.json'), 'utf8')).signals.map((s) => s.id), [a]);
 });

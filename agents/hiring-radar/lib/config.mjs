@@ -121,6 +121,9 @@ export function validateConfig(c) {
   }
   need(c.sources && ['hn', 'jobs', 'web_search'].every((s) => isObj(c.sources[s])), 'sources.hn, sources.jobs, sources.web_search are required');
   need(isObj(c.output?.digest), 'output.digest is required');
+  need(['new', 'all'].includes(c.notify?.scope), 'notify.scope must be "new" or "all"');
+  need(c.notify?.min_score == null || (c.notify.min_score >= 0 && c.notify.min_score <= 100), 'notify.min_score must be null or 0-100');
+  need(Number.isInteger(c.notify?.max_items) && c.notify.max_items >= 1, 'notify.max_items must be a positive integer');
   return errs;
 }
 

@@ -5,6 +5,10 @@ import { join } from 'node:path';
 import { CAREER_OPS_DIR } from '../lib/config.mjs';
 import { normalizeText } from '../lib/text.mjs';
 
+// LinkedIn does not export second-degree contacts, so "connections of connections" is a prefilled
+// people-search link (2nd-degree filter) the user opens in their own session. Never fetched by us.
+export { secondDegreeSearchUrl } from '../../career-ops/linkedin-join.mjs';
+
 export const WARM = { DIRECT: 'WARM_INTRO_AVAILABLE', COMPANY: 'COMPANY_CONNECTION', NONE: 'NO_CONNECTION' };
 
 export function connectionsPath(env = process.env) {

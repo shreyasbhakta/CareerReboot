@@ -1,3 +1,5 @@
+import { secondDegreeSearchUrl } from '../storage/connections.mjs';
+
 // Machine-readable output for the dashboard. Normalized signals, full score
 // breakdowns, no contact emails or raw connection exports.
 export function toPublicSignal(s) {
@@ -29,6 +31,7 @@ export function toPublicSignal(s) {
       locationKind: s.locationKind,
       warm: s.warm ? { status: s.warm.status, connections: (s.warm.connections || []).map((c) => ({ name: c.name, title: c.title, company: c.company })), note: s.warm.note } : { status: 'NO_CONNECTION', connections: [] },
       why: s.why,
+      secondDegreeUrl: s.company?.name ? secondDegreeSearchUrl(s.company.name) : null,
       suggestedAction: s.outreach?.action,
       outreachAngle: s.outreach?.angle,
       ...(s.metadata?.hnUser ? { hnUser: s.metadata.hnUser } : {}),
