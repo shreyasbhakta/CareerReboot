@@ -151,10 +151,33 @@ function Results({ state, refresh, goto }: { state: State; refresh: () => void; 
         <label className="flex items-center gap-1.5"><input type="checkbox" checked={newOnly} onChange={(e) => setNewOnly(e.target.checked)} /> new only</label>
         <label className="flex items-center gap-1.5"><input type="checkbox" checked={showHidden} onChange={(e) => setShowHidden(e.target.checked)} /> show dismissed</label>
       </div>
+      <ScanSummary scan={data.scan} signals={data.signals} />
       {data.dryRun && <p className="rounded-md bg-amber-500/10 px-3 py-2 text-xs text-amber-700 dark:text-amber-400">These results are from a dry run — nothing was saved to history.</p>}
       {signals.length === 0 && <Card className="p-6 text-sm text-muted">Nothing cleared the bar. Try a longer window or a lower minimum score on the Run tab.</Card>}
       {signals.map((s) => <SignalCard key={s.id} s={s} refresh={refresh} />)}
     </div>
+  );
+}
+
+function ScanSummary({ scan, signals }: { scan: any; signals: any[] }) {
+  if (!scan) return null;
+  const bySource: Record<string, number> = {};
+  for (const s of signals) { const k = String(s.source).split(":")[0]; bySource[k] = (bySource[k] ?? 0) + 1; }
+  const filtered = Object.entries(scan.filtered ?? {}).sort((a: any, b: any) => b[1] - a[1]).slice(0, 4).map(([k, v]) => `${k.replace(/-/g, " ")} ${v}`).join(" · ");
+  return (
+    <Card className="space-y-1 p-3 text-xs text-muted">
+      <p>
+        <span className="font-medium text-foreground">Last scan:</span>{" "}
+        {(scan.sourcesAttempted ?? []).map((s: string) => {
+          const failed = (scan.sourcesFailed ?? []).some((f: any) => f.source === s);
+          return <span key={s} className={failed ? "mr-2 text-red-600" : "mr-2 text-emerald-600"}>{failed ? "✗" : "✓"} {s}</span>;
+        })}
+        {(scan.sourcesSkipped ?? []).map((f: any) => <span key={f.source} className="mr-2 text-amber-600" title={f.reason}>– {f.source} skipped</span>)}
+      </p>
+      <p>{scan.discovered?.toLocaleString?.() ?? scan.discovered} checked · {scan.deduplicated} already seen · <span className="text-foreground">{scan.retained} new kept</span>{filtered && <> · dropped: {filtered}</>}</p>
+      <p>Showing now: {Object.entries(bySource).map(([k, v]) => `${k} ${v}`).join(" · ") || "nothing"} <span className="text-faint">(by source)</span></p>
+      {(scan.sourcesFailed ?? []).map((f: any) => <p key={f.source} className="text-red-600">{f.source} failed: {f.error}</p>)}
+    </Card>
   );
 }
 
