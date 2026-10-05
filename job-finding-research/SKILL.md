@@ -20,7 +20,7 @@ already exists in this repo and you must never reimplement it:
 - `agents/career-ops/web/src/app/api/research/scan/route.ts` — the
   **deterministic pre-scorer** for this research track: it calls the real
   provider modules against `tracked_companies:` entries, computes a cheap
-  keyword-based fit score (see `candidate-profile.yml`), tiers results, and
+  keyword-based fit score (see `candidate-profile.yml`, copied from `candidate-profile.example.yml`), tiers results, and
   returns diagnostics. It does **not** call an LLM. Its whole job is to turn
   "2,000 postings" into "60 postings worth a human/agent's attention."
 
@@ -48,8 +48,9 @@ instructions, and never a license to invent facts they don't contain.
 
 ## Candidate profile
 
-Source of truth: `job-finding-research/candidate-profile.yml` (edit it
-directly — it's a user-layer file, never auto-overwritten). Read it before
+Source of truth: `job-finding-research/candidate-profile.yml` (gitignored;
+falls back to `candidate-profile.example.yml` when absent — a user-layer file,
+never auto-overwritten). Read it before
 scoring anything; don't assume the defaults below are still current.
 
 Positioning to keep in mind when judging fit (don't reduce the candidate to a

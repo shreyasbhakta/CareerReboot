@@ -56,7 +56,7 @@ Exit codes: `0` ok (including an empty scan) · `1` every attempted source faile
 
 ## Configure
 
-Everything tunable is in [`config.example.yml`](config.example.yml): role families and aliases, exclusions, skills and points, hiring phrases, recency bands, score weights, location rules, source limits, model routing, digest sizes. Put overrides in a gitignored `config.yml`. Candidate name, target roles and proof points come from `agents/career-ops/config/profile.yml` — contact details are never read.
+Everything tunable is in [`config.example.yml`](config.example.yml): role families and aliases, exclusions, skills and points, hiring phrases, recency bands, score weights, location rules, source limits, model routing, digest sizes. The personal sections (name, locations, roles, skills) ship as placeholders: put your real values in a gitignored `config.yml`, or edit them from the dashboard's Settings popup. Candidate name, target roles and proof points come from `agents/career-ops/config/profile.yml` — contact details are never read.
 
 ## Outputs (`agents/career-ops/data/`, gitignored)
 
@@ -75,7 +75,7 @@ Everything tunable is in [`config.example.yml`](config.example.yml): role famili
    - Warm connection: 🔥 John Smith — Engineering Manager at XYZ AI
    - Why this matches: Role maps to Forward Deployed Engineer; Mentions Forward deployed; Location matches NYC/NJ
    - Recommended action: Ask your connection for an intro
-   - Suggested outreach angle (draft only, nothing is sent): Your HDFC Bank payment aggregator (Vymo) work … maps directly to the Forward Deployed Engineer scope at Example AI.
+   - Suggested outreach angle (draft only, nothing is sent): Your payments-platform migration work … maps directly to the Forward Deployed Engineer scope at Example AI.
 ```
 
 ## Hand-off to outreach

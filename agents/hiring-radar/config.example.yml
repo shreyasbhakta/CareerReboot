@@ -8,9 +8,12 @@
 #   5. CLI flags (--days, --limit, --min-score, ...)
 # Secrets (API keys, webhook URLs) are NEVER read from YAML — only from env.
 
+# Everything from here to "Hiring language" describes YOU. The values below are
+# generic placeholders: put your real ones in config.yml (gitignored) or edit
+# them from the dashboard (bottom "Settings" button, Hiring Radar tab).
 profile:
-  name: "Shreyas Kumar Bhakta"          # overridden by career-ops profile.yml when present
-  home_locations: ["new york", "nyc", "new york city", "manhattan", "brooklyn", "queens", "jersey city", "hoboken", "newark", "new jersey", "nj", "ny"]
+  name: "Your Name"                     # overridden by career-ops profile.yml when present
+  home_locations: ["your city", "your metro area"]   # lowercase; matched against post/job locations
   open_to_relocation: true
   remote_us_ok: true
 
@@ -21,71 +24,28 @@ role_families:
   - id: swe
     label: Software Engineer
     tier: target
-    aliases: ["software engineer", "software development engineer", "software developer", "sde", "swe", "sde ii", "software engineer ii", "member of technical staff"]
+    aliases: ["software engineer", "software developer", "software development engineer", "member of technical staff"]
   - id: backend
     label: Backend Engineer
     tier: target
-    aliases: ["backend engineer", "back end engineer", "backend software engineer", "backend developer", "back end developer", "server side engineer", "software engineer backend", "software engineer back end", "backend software developer", "distributed systems engineer"]
-  - id: fde
-    label: Forward Deployed Engineer
-    tier: target
-    aliases: ["forward deployed engineer", "forward deployment engineer", "forward deployed software engineer", "fde", "deployed engineer", "deployment engineer", "customer engineer", "technical solutions engineer", "solutions engineer", "implementation engineer", "field engineer", "applied engineer"]
-  - id: ai
-    label: AI Engineer
-    tier: target
-    aliases: ["ai engineer", "applied ai engineer", "ai software engineer", "llm engineer", "generative ai engineer", "gen ai engineer", "genai engineer", "agentic ai engineer", "ai agent engineer", "ai platform engineer", "ai application engineer", "ai developer", "machine learning engineer ai", "applied ai software engineer"]
+    aliases: ["backend engineer", "back end engineer", "backend developer", "backend software engineer"]
   - id: fullstack
     label: Full Stack Engineer
     tier: adjacent
-    aliases: ["full stack engineer", "fullstack engineer", "full stack software engineer", "full stack developer"]
-  - id: mle
-    label: Machine Learning Engineer
-    tier: adjacent
-    aliases: ["machine learning engineer", "ml engineer", "mlops engineer"]
-  - id: platform
-    label: Platform / DevOps Engineer
-    tier: adjacent
-    aliases: ["platform engineer", "site reliability engineer", "sre", "devops engineer", "infrastructure engineer"]
+    aliases: ["full stack engineer", "fullstack engineer", "full stack developer"]
 
 # Never equivalent to the families above (checked against the title first).
+# Single words are checked inside the role phrase's window, so "our mobile app"
+# elsewhere in a post does not exclude it.
 exclude_roles:
-  - "data scientist"
-  - "research scientist"
-  - "machine learning research"
-  - "research engineer scientist"
-  - "frontend engineer"
-  - "front end engineer"
-  - "front end developer"
-  - "frontend developer"
-  - "mobile engineer"
-  - "ios engineer"
-  - "android engineer"
-  - "ios developer"
-  - "android developer"
   - "data analyst"
-  - "business analyst"
   - "product manager"
   - "designer"
   - "marketing"
-  - "sales representative"
   - "account executive"
-  - "recruiter coordinator"
-  - "cybersecurity"
-  - "security engineer"
-  - "qa engineer"
-  - "quality assurance"
-  - "sdet"
-  # Single-word qualifiers: "Software Engineer, Mobile Platform (iOS)" is not a match.
-  # Checked inside the role phrase's window (whole title for titles), so "our mobile app"
-  # elsewhere in a post does not exclude it.
-  - "mobile"
-  - "ios"
-  - "android"
-  - "frontend"
-  - "qa"
 
 seniority:
-  # Titles containing these are dropped (profile: ~3 YOE, mid-level).
+  # Titles containing these are dropped.
   exclude_title_terms: ["intern", "internship", "co-op", "vice president", "vp of", "director", "head of", "chief"]
   # Titles containing these keep a role match but lose points.
   penalty_title_terms: ["principal", "staff", "distinguished", "manager", "lead"]
@@ -94,48 +54,20 @@ seniority:
 # ---- Skills (transparent technical match) --------------------------------
 # technicalMatch = role base (target 70 / adjacent 35 / unknown 20) + skill points
 # (capped at `skill_points_cap`), clamped to 100. Every contributing term is
-# listed in the output, e.g. "Java +4".
+# listed in the output, e.g. "Python +3". Group names are free-form; they key
+# outreach.group_proof_keywords below.
 technical:
   role_base: { target: 70, adjacent: 35, unknown: 20 }
   skill_points_cap: 30
   skills:
     core:
-      - { name: Java, terms: ["java"], points: 4 }
-      - { name: Spring Boot, terms: ["spring boot", "spring"], points: 4 }
       - { name: Python, terms: ["python"], points: 3 }
-      - { name: Kotlin, terms: ["kotlin"], points: 2 }
-      - { name: TypeScript, terms: ["typescript", "node.js", "nodejs"], points: 2 }
-      - { name: Kafka, terms: ["kafka"], points: 3 }
-      - { name: Redis, terms: ["redis"], points: 2 }
-      - { name: PostgreSQL, terms: ["postgresql", "postgres"], points: 2 }
-      - { name: Microservices, terms: ["microservices", "microservice"], points: 3 }
-      - { name: Distributed systems, terms: ["distributed systems", "distributed system", "event driven"], points: 3 }
-      - { name: Backend, terms: ["backend", "back end", "server side"], points: 2 }
-      - { name: APIs, terms: ["rest api", "rest apis", "apis", "grpc", "graphql"], points: 2 }
-      - { name: AWS, terms: ["aws", "amazon web services"], points: 2 }
-      - { name: Docker/Kubernetes, terms: ["docker", "kubernetes", "k8s"], points: 2 }
-    ai:
-      - { name: LangChain/LangGraph, terms: ["langchain", "langgraph"], points: 3 }
-      - { name: RAG, terms: ["rag", "retrieval augmented generation", "retrieval augmented"], points: 3 }
-      - { name: LLM, terms: ["llm", "llms", "large language model", "large language models"], points: 3 }
-      - { name: Agentic AI, terms: ["agentic", "ai agents", "ai agent", "multi agent"], points: 3 }
-      - { name: MCP, terms: ["mcp", "model context protocol"], points: 2 }
-      - { name: Generative AI, terms: ["generative ai", "genai", "gen ai"], points: 2 }
-      - { name: FastAPI, terms: ["fastapi"], points: 2 }
-      - { name: AI evaluation, terms: ["evals", "ai evaluation", "llm evaluation", "ragas"], points: 2 }
-      - { name: Playwright, terms: ["playwright"], points: 1 }
+      - { name: TypeScript, terms: ["typescript", "node.js", "nodejs"], points: 3 }
+      - { name: SQL, terms: ["sql", "postgresql", "postgres"], points: 2 }
+      - { name: APIs, terms: ["rest api", "rest apis", "grpc", "graphql"], points: 2 }
+      - { name: Cloud, terms: ["aws", "gcp", "azure"], points: 2 }
     domain:
-      - { name: Fintech, terms: ["fintech", "financial technology"], points: 3 }
-      - { name: Payments, terms: ["payments", "payment processing", "payment"], points: 3 }
-      - { name: Banking, terms: ["banking", "banks"], points: 2 }
-      - { name: Mobility, terms: ["mobility"], points: 1 }
-      - { name: Enterprise SaaS, terms: ["enterprise saas", "b2b saas", "enterprise software"], points: 2 }
-    client_facing:
-      - { name: Forward deployed, terms: ["forward deployed"], points: 3 }
-      - { name: Customer-facing, terms: ["customer facing", "client facing"], points: 3 }
-      - { name: Technical discovery, terms: ["technical discovery", "discovery"], points: 2 }
-      - { name: Stakeholder management, terms: ["stakeholder", "stakeholders"], points: 2 }
-      - { name: Implementation/deployment, terms: ["implementation", "deployment", "solutions"], points: 1 }
+      - { name: Your industry, terms: ["your industry"], points: 2 }
 
 # ---- Hiring language -------------------------------------------------------
 # Deterministic first pass. `strong` = explicit first-person/team hiring;
@@ -182,7 +114,7 @@ scoring:
   recruiter_titles: ["recruiter", "talent", "sourcer", "people partner", "head of talent", "recruiting"]
   company_relevance:
     base: 50
-    domain_terms: ["fintech", "payments", "banking", "enterprise", "saas", "ai", "llm", "mobility"]
+    domain_terms: ["your industry", "saas"]
     domain_bonus: 25
     tracked_bonus: 25          # company appears in portals.yml tracked_companies
 
@@ -228,8 +160,8 @@ sources:
     cache_hours: 22
     # Queries are generated from roles x phrases x skills; these are the templates.
     phrases: ["hiring", "we're hiring", "I'm hiring", "join our team", "looking for"]
-    location_terms: ["New York", "remote"]
-    skill_pairs: ["Java Kafka", "Spring Boot", "LangGraph", "RAG", "Python"]
+    location_terms: ["Your City", "remote"]
+    skill_pairs: ["Python", "TypeScript"]
     site_hints: ["linkedin.com/posts", "linkedin.com/feed/update", "x.com", "news.ycombinator.com"]
     # Result URLs matching these hosts are processed; others are discarded as noise.
     allowed_hosts: ["linkedin.com", "x.com", "twitter.com", "news.ycombinator.com", "boards.greenhouse.io", "job-boards.greenhouse.io", "jobs.lever.co", "jobs.ashbyhq.com", "wellfound.com", "workable.com", "apply.workable.com", "myworkdayjobs.com", "smartrecruiters.com", "recruitee.com", "breezy.hr", "bamboohr.com", "builtin.com", "builtinnyc.com"]
@@ -288,7 +220,5 @@ outreach:
   # Which profile proof points (career-ops profile.yml narrative.proof_points)
   # are relevant for each matched skill group. Keywords match proof name/metric.
   group_proof_keywords:
-    core: [kafka, distributed, microservice, latency, checkout, transaction]
-    ai: [rag, ragas, ai, agent, llm]
-    domain: [payment, bank, hdfc, fintech]
-    client_facing: [hdfc, stakeholder, embedded, bank]
+    core: [api, latency, scale, migration]
+    domain: [your industry]
