@@ -1,0 +1,41 @@
+name: CI
+
+# Every suite in the repo on each pull request and push to main. The daily scan
+# lives in hiring-radar.yml; this workflow never touches personal data or secrets.
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          cache: npm
+          cache-dependency-path: |
+            agents/hiring-radar/package-lock.json
+            agents/career-ops/web/package-lock.json
+
+      - name: Install dependencies
+        # --ignore-scripts: career-ops' postinstall downloads Chromium, which no test needs.
+        run: |
+          npm --prefix agents/career-ops install --ignore-scripts --no-audit --no-fund
+          npm --prefix agents/hiring-radar ci
+          npm --prefix agents/career-ops/web ci --no-audit --no-fund
+
+      - name: Test
+        run: npm run test:all
