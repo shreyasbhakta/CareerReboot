@@ -15,6 +15,7 @@ import { ExploreProvider } from "@/components/explore/explore-provider";
 import { FirstScoreView } from "@/components/explore/first-score-view";
 import { WorkerPills } from "@/components/jobs/worker-pills";
 import { UsageMeter } from "@/components/usage-meter";
+import { SettingsButton } from "@/components/settings/settings-dialog";
 // BetaBanner (upstream career-ops-hq/career-ops issue reporter) intentionally
 // not imported here — it files bugs against the upstream repo, which isn't
 // meaningful for this personal instance.
@@ -34,7 +35,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
       <ExploreProvider>
       <MobileNav />
       <div className="flex min-h-screen">
-        <aside className="sticky top-0 hidden h-screen w-60 shrink-0 flex-col overflow-y-auto border-r border-border bg-surface/30 p-4 md:flex">
+        <aside className="glass sticky top-0 hidden h-screen w-60 shrink-0 flex-col overflow-y-auto rounded-none border-y-0 border-l-0 p-4 md:flex">
           <Link href="/" className="mb-8 flex items-center gap-2.5 px-1">
             <CoMark size={32} />
             <span className={`${instrumentSerif.className} relative -top-px text-2xl font-normal tracking-tight text-landing`}>
@@ -74,8 +75,9 @@ export function AppShell({ children }: { children: React.ReactNode }) {
 
           <div className="mt-auto space-y-3 pt-4">
             <UsageMeter />
+            <SettingsButton variant="sidebar" />
             <div className="flex items-center justify-between px-1">
-              <Link href="/legal" className={`${instrumentSerif.className} text-sm text-faint hover:text-muted`}>v1 · legal</Link>
+              <Link href="/legal" className={`${instrumentSerif.className} text-sm text-faint hover:text-muted`}>v2 · legal</Link>
               <ThemeToggle />
             </div>
           </div>

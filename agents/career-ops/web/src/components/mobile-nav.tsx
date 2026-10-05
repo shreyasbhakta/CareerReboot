@@ -9,6 +9,7 @@ import { CoMark } from "@/components/co-mark";
 import { ThemeToggle } from "@/components/theme-toggle";
 import { WorkerPills } from "@/components/jobs/worker-pills";
 import { UsageMeter } from "@/components/usage-meter";
+import { SettingsButton } from "@/components/settings/settings-dialog";
 import { instrumentSerif } from "@/lib/fonts";
 import { isActivePath } from "@/lib/nav-items";
 import { navFor, useMode } from "@/lib/mode";
@@ -183,8 +184,9 @@ export function MobileNav() {
 
         <div className="co-msafe mt-auto space-y-3 border-t border-border px-4 pt-4">
           <UsageMeter />
+          <SettingsButton variant="sidebar" />
           <div className="flex items-center justify-between">
-            <span className={`${instrumentSerif.className} text-sm text-faint`}>local-first · v0</span>
+            <span className={`${instrumentSerif.className} text-sm text-faint`}>local-first · v2</span>
             <ThemeToggle />
           </div>
         </div>

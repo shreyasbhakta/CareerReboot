@@ -14,6 +14,7 @@ export const buttonVariants = cva(
         outline: "border border-border bg-surface hover:bg-surface-hover hover:text-foreground",
         ghost: "hover:bg-surface-hover hover:text-foreground",
         secondary: "border border-border bg-surface text-foreground hover:bg-surface-hover",
+        shine: "btn-shine rounded-full text-foreground shadow-[0_0_24px_-8px_var(--color-brand)] hover:shadow-[0_0_32px_-6px_var(--color-brand)] [transition:box-shadow_200ms]",
       },
       size: { sm: "px-2 py-1.5 text-xs", icon: "p-1.5 max-sm:min-w-[44px]", default: "" },
     },

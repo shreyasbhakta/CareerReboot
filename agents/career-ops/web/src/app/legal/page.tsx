@@ -10,7 +10,7 @@ export default function LegalPage() {
     <main className="mx-auto max-w-3xl px-6 py-12 text-sm leading-relaxed text-muted">
       <Link href="/" className="text-xs text-brand hover:underline">← Back</Link>
       <h1 className={`${instrumentSerif.className} mt-3 text-4xl text-landing`}>Legal &amp; attributions</h1>
-      <p className="mt-2 text-faint">CareerReboot v1 · software provided “as is”, under the Apache License 2.0, without warranty of any kind.</p>
+      <p className="mt-2 text-faint">CareerReboot v2 · software provided “as is”, under the Apache License 2.0, without warranty of any kind.</p>
 
       <H>What this software is</H>
       <p>A local tool. It runs on your machine, stores your data in files on your machine, and calls only the services you configure. It does not operate a hosted service, collect telemetry, or act on your behalf: nothing is ever submitted, applied to, or sent without you doing it yourself.</p>
@@ -26,7 +26,7 @@ export default function LegalPage() {
       </ul>
 
       <H>Personal data and privacy</H>
-      <p>Your CV, profile, connections export, results and keys are stored locally and excluded from version control. Data leaves your machine only when you choose to: search queries go to your search provider; if you enable a model provider, short post excerpts and a summary of target roles and skills (never your email, phone or full CV) go to that provider; if you set a webhook, result summaries go to it. You are the data controller for any personal data of third parties you collect, including your connections list. Delete it when you no longer need it.</p>
+      <p>Your CV, profile, connections export, results and keys are stored locally and excluded from version control. Data leaves your machine only when you choose to: search queries go to your search provider; if you enable a model provider, short post excerpts and a summary of target roles and skills (never your email, phone or full CV) go to that provider; if you set a webhook, result summaries go to it. The background video is fetched from the URL shown in Settings → Appearance (a third-party CDN by default); turn it off there to avoid that request. You are the data controller for any personal data of third parties you collect, including your connections list. Delete it when you no longer need it.</p>
 
       <H>AI-generated content</H>
       <p>Scores, summaries, drafts and tailored documents may be incomplete, outdated or wrong. Verify every fact before using it in an application or message. You are responsible for what you submit or send.</p>
@@ -35,7 +35,7 @@ export default function LegalPage() {
       <p>Visa, immigration, sponsorship and compensation information is informational only and is not legal, immigration or financial advice. Consult a qualified professional.</p>
 
       <H>Open-source attributions</H>
-      <p>Built on career-ops by Santiago Fernández de Valderrama (MIT) and ResumeSkills (MIT); see <code>THIRD_PARTY_NOTICES.md</code>. Runtime libraries include Next.js, React, Tailwind CSS, Motion (MIT), lucide-react, js-yaml and Playwright. Full citations are in the README.</p>
+      <p>Built on career-ops by Santiago Fernández de Valderrama (MIT) and ResumeSkills (MIT); see <code>THIRD_PARTY_NOTICES.md</code>. Runtime libraries include Next.js, React, Tailwind CSS, Motion (MIT), lucide-react, js-yaml and Playwright. The v2 visual design draws on UI UX Pro Max by Next Level Builder (MIT) as a reference; no code is copied. Full citations are in the README.</p>
     </main>
   );
 }
