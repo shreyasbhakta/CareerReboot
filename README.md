@@ -55,7 +55,7 @@ flowchart LR
 | Hiring Radar | `agents/hiring-radar` | Collect → normalise → score → deduplicate → persist → render → notify. Pure Node ESM, one dependency (`js-yaml`). |
 | career-ops | `agents/career-ops` | Application pipeline, ATS provider plugins, CV rendering, tracker. Reused by Hiring Radar (providers, CLI helpers, connection matcher). |
 | Outreach | `agents/outreach` | Skill that drafts messages from tracker and Hiring Radar context. Draft-only. |
-| Deploy | `deploy/` | GCP VM scripts; optional OmniRoute gateway. |
+| Deploy | `deploy/` | VM scripts for GCP or AWS; optional OmniRoute gateway. |
 
 ### Design principles
 
@@ -165,7 +165,7 @@ Then open the dashboard, click **Settings**, and create your local files from th
 | Validate a config override | `node agents/hiring-radar/scan.mjs --check-config path/to/config.yml` |
 | Start fresh (dry run, then `-- --yes`) | `npm run reset` moves generated data and caches to `.careerreboot-backups/`; config, secrets, CV and LinkedIn exports stay |
 
-Scheduling: the **Schedule** tab installs a user crontab entry; `deploy/gcp/crontab.example` covers a VM; `.github/workflows/hiring-radar.yml` runs daily at ~07:35 America/New_York and on demand (results published as a workflow artifact and job summary, history persisted with the Actions cache; nothing is committed).
+Scheduling: the **Schedule** tab installs a user crontab entry; `deploy/vm/crontab.example` covers a VM; `.github/workflows/hiring-radar.yml` runs daily at ~07:35 America/New_York and on demand (results published as a workflow artifact and job summary, history persisted with the Actions cache; nothing is committed).
 
 ## Configuration
 
@@ -198,9 +198,11 @@ Secrets: `BRAVE_SEARCH_API_KEY`, `SEARXNG_URL`, provider keys, `HIRING_RADAR_WEB
 | Target | Reference |
 |---|---|
 | Local | This document |
-| Always-on VM | `deploy/gcp/README.md` (cron + systemd, reached over an SSH tunnel) |
+| Always-on VM | `deploy/vm/README.md`: GCP or AWS Lightsail, cron + systemd, reached over an SSH tunnel or Tailscale |
 | CI schedule | `.github/workflows/hiring-radar.yml` |
 | Optional services | `agents/career-ops/deploy/searxng` (search), `deploy/omniroute` (model gateway) |
+
+Nothing is hosted by default. CI's **Deploy readiness** step builds the production dashboard and lints the VM scripts on every pull request, so any green commit on `main` deploys as-is. Cheapest options: AWS Lightsail at $12/month (recommended) or GCP's free `e2-micro`; costs and trade-offs are in `deploy/vm/README.md`. Personal config and secrets are copied to the VM over SSH, never through git.
 
 ## Development
 
@@ -222,7 +224,7 @@ npm run graph                 # refresh the Graphify code graph (uv tool install
 agents/career-ops        pipeline + dashboard (web/)
 agents/hiring-radar      scanner, scoring, storage, formatters, tests, skills
 agents/outreach          draft-only outreach skill
-deploy/                  GCP scripts, OmniRoute compose
+deploy/                  VM scripts (GCP/AWS), OmniRoute compose
 docs/architecture        design records
 .github/workflows        CI on every PR, scheduled scan
 scripts/                 workspace tools (reset)

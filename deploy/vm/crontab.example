@@ -1,4 +1,4 @@
-# CareerReboot cron — copy relevant lines into `crontab -e` on the VM.
+# CareerReboot cron — copy relevant lines into `crontab -e` on the VM (GCP or AWS).
 # Paths assume the repo lives at ~/CareerReboot; adjust CD if not.
 #
 # Log to a file per job so a silent cron failure is debuggable later

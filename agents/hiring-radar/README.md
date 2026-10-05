@@ -84,7 +84,7 @@ Everything tunable is in [`config.example.yml`](config.example.yml): role famili
 
 ## Automation
 
-`.github/workflows/hiring-radar.yml` runs daily at ~07:35 New York time (and on demand); see the architecture doc for secrets and behaviour. On the GCP VM, `deploy/gcp/crontab.example` can run `node agents/hiring-radar/scan.mjs` the same way.
+`.github/workflows/hiring-radar.yml` runs daily at ~07:35 New York time (and on demand); see the architecture doc for secrets and behaviour. On a VM (GCP or AWS), `deploy/vm/crontab.example` can run `node agents/hiring-radar/scan.mjs` the same way.
 
 ## Limits
 

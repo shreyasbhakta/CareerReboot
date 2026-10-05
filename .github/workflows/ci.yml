@@ -1,7 +1,8 @@
 name: CI
 
-# Every suite in the repo on each pull request and push to main. The daily scan
-# lives in hiring-radar.yml; this workflow never touches personal data or secrets.
+# Every suite in the repo, plus a deploy-readiness build, on each pull request and
+# push to main. The daily scan lives in hiring-radar.yml; this workflow never
+# touches personal data or secrets.
 
 on:
   pull_request:
@@ -39,3 +40,11 @@ jobs:
 
       - name: Test
         run: npm run test:all
+
+      - name: Deploy readiness
+        # Keeps every green commit deployable with deploy/vm: production build + VM script lint.
+        env:
+          NEXT_TELEMETRY_DISABLED: "1"
+        run: |
+          npm --prefix agents/career-ops/web run build
+          shellcheck deploy/vm/*.sh
