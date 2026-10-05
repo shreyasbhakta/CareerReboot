@@ -4,7 +4,7 @@
 
 ### Features
 
-* **ui:** dimmed background video behind every page, configurable per browser (URL, dim, on/off) or via `NEXT_PUBLIC_BACKGROUND_VIDEO_URL`; reduced-motion users get a still frame.
+* **ui:** dimmed background video behind every page (can be switched off per browser in Settings); reduced-motion users get a still frame.
 * **ui:** new launcher with glass cards, pointer spotlight, gradient-ring buttons and an animated wordmark; glass sidebar.
 * **settings:** one Settings popup (launcher dock, sidebar, mobile drawer) for every per-user file: profile, Hiring Radar, job research and portals. Edits are validated, the previous version is kept as `.bak-*`, files are written owner-only.
 

@@ -33,14 +33,7 @@ export function Launcher() {
   return (
     <main className="relative flex min-h-screen flex-col items-center px-6 pb-8 pt-20 md:pt-28">
       <motion.div className="flex flex-col items-center text-center" {...enter(0, -12)}>
-        <span className="glass inline-flex items-center gap-2 rounded-full px-3 py-1 text-xs text-muted">
-          <span className="relative flex size-2">
-            <span className="absolute inline-flex size-full rounded-full bg-emerald-400 opacity-75 motion-safe:animate-ping" />
-            <span className="relative inline-flex size-2 rounded-full bg-emerald-400" />
-          </span>
-          Version 2 · local-first
-        </span>
-        <div className="mt-8 flex items-center gap-3">
+        <div className="flex items-center gap-3">
           <CoMark size={44} />
           <h1 className={`${instrumentSerif.className} text-gradient text-5xl font-semibold tracking-tight md:text-7xl`}>CareerReboot</h1>
         </div>

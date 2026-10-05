@@ -2,12 +2,12 @@
 
 import { useCallback, useEffect, useRef, useState } from "react";
 import Link from "next/link";
-import { FileCog, Loader2, Palette, RotateCcw, Settings2, X } from "lucide-react";
+import { FileCog, Loader2, Palette, Settings2, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { ThemeToggle } from "@/components/theme-toggle";
 import { cn } from "@/lib/cn";
-import { DEFAULT_APPEARANCE, DIM_RANGE, safeVideoUrl, saveAppearance, useAppearance } from "@/lib/appearance";
+import { setVideoEnabled, useVideoEnabled } from "@/lib/appearance";
 import type { SettingsDocView } from "@/lib/settings";
 
 const APPEARANCE = "appearance";
@@ -125,46 +125,20 @@ function SettingsPanel({ onClose, onDirty }: { onClose: () => void; onDirty: (di
 }
 
 function AppearancePanel() {
-  const a = useAppearance();
-  const [url, setUrl] = useState(a.videoUrl);
-  const urlOk = safeVideoUrl(url) !== null;
+  const video = useVideoEnabled();
   return (
     <div className="space-y-6">
       <div>
-        <h3 className="text-sm font-semibold">Background video</h3>
-        <p className="mt-1 text-xs text-muted">Plays muted behind every page, dimmed more on work pages so tables stay readable. Saved in this browser only.</p>
+        <h3 className="text-sm font-semibold">Appearance</h3>
+        <p className="mt-1 text-xs text-muted">Saved in this browser only.</p>
       </div>
       <label className="flex cursor-pointer items-center gap-3 text-sm">
-        <input type="checkbox" className="size-4 accent-[var(--color-brand)]" checked={a.video} onChange={(e) => saveAppearance({ ...a, video: e.target.checked })} />
+        <input type="checkbox" className="size-4 accent-[var(--color-brand)]" checked={video} onChange={(e) => setVideoEnabled(e.target.checked)} />
         Show the background video
       </label>
-      <div className="space-y-1.5">
-        <label htmlFor="bg-video-url" className="block text-xs font-medium text-muted">Video URL (https or a path under /public)</label>
-        <div className="flex gap-2">
-          <input id="bg-video-url" className={inputCls} value={url} onChange={(e) => setUrl(e.target.value)} spellCheck={false} aria-invalid={!urlOk} />
-          <Button variant="outline" disabled={!urlOk || url === a.videoUrl} onClick={() => saveAppearance({ ...a, videoUrl: url })}>Apply</Button>
-        </div>
-        {!urlOk && <p className="text-xs text-red-600">Use an https:// URL or a path such as /background.mp4.</p>}
-      </div>
-      <div className="space-y-1.5">
-        <label htmlFor="bg-dim" className="block text-xs font-medium text-muted">Dim · {Math.round(a.dim * 100)}%</label>
-        <input
-          id="bg-dim"
-          type="range"
-          min={DIM_RANGE.min}
-          max={DIM_RANGE.max}
-          step={0.05}
-          value={a.dim}
-          onChange={(e) => saveAppearance({ ...a, dim: Number(e.target.value) })}
-          className="w-full max-w-sm cursor-pointer accent-[var(--color-brand)]"
-        />
-      </div>
-      <div className="flex flex-wrap items-center gap-3 border-t border-border/70 pt-4">
+      <div className="flex items-center gap-3 border-t border-border/70 pt-4">
         <span className="text-sm text-muted">Theme</span>
         <ThemeToggle />
-        <Button variant="ghost" className="ml-auto" onClick={() => { saveAppearance(null); setUrl(DEFAULT_APPEARANCE.videoUrl); }}>
-          <RotateCcw className="size-4" /> Reset appearance
-        </Button>
       </div>
     </div>
   );

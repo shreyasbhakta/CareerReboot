@@ -178,7 +178,7 @@ Every per-user setting is a git-ignored local file next to a committed example t
 | Job research scorer | `job-finding-research/candidate-profile.yml` | `candidate-profile.example.yml` |
 | Portals tracked by the scanner | `agents/career-ops/portals.yml` | `templates/portals.example.yml` |
 | Secrets | `agents/hiring-radar/.env` (Hiring Radar → Keys & data) or CI secrets | — |
-| Appearance: background video, dim, theme | browser storage | `NEXT_PUBLIC_BACKGROUND_VIDEO_URL` in `web/.env.example` |
+| Appearance: background video on/off, theme | browser storage | — |
 
 | Variable | Purpose |
 |---|---|
@@ -234,7 +234,7 @@ scripts/                 workspace tools (reset)
 - Only public, documented endpoints and a search provider you configure are used, under each provider's terms. LinkedIn is never accessed programmatically; the connections file is your own export, kept local.
 - Outputs (scores, summaries, drafts) are decision aids and may be wrong; verify before acting. Visa and compensation information is not legal or financial advice.
 - Third-party data remains the property of its authors; store excerpts and links for personal use only.
-- The default background video streams from a third-party CDN, so opening the dashboard makes that one request; switch it off or point it at a local file in Settings → Appearance.
+- The background video streams from a third-party CDN, so opening the dashboard makes that one request; switch it off in Settings → Appearance.
 - In-app notice: `/legal`. Licences of dependencies: [`THIRD_PARTY_NOTICES.md`](THIRD_PARTY_NOTICES.md).
 
 ## Citations
@@ -248,7 +248,8 @@ scripts/                 workspace tools (reset)
 7. Y Combinator. *Hacker News API*. https://github.com/HackerNews/API; Algolia. *HN Search API*. https://hn.algolia.com/api
 8. Greenhouse, Lever, Ashby, Workday public job-board APIs; Brave Software. *Brave Search API*. https://brave.com/search/api/; *SearXNG*. AGPL-3.0. https://github.com/searxng/searxng
 9. Next Level Builder. *UI UX Pro Max*. MIT. https://github.com/nextlevelbuilder/ui-ux-pro-max-skill — design reference for the v2 glass surfaces, gradient-ring buttons and accessibility checklist (no code vendored).
-10. Vercel. *Next.js*; Meta. *React*; *Motion* (motiondivision); *Tailwind CSS*; *lucide*; *js-yaml*; Microsoft. *Playwright* — see `THIRD_PARTY_NOTICES.md`.
+10. Background video: `hf_20260423_084718_72a17915-4964-4059-afcd-22d59399b72e.mp4`, streamed from https://d8j0ntlcm91z4.cloudfront.net/user_38xzZboKViGWJOttwIXH07lWA1P/hf_20260423_084718_72a17915-4964-4059-afcd-22d59399b72e.mp4 — supplied by the project owner; not redistributed in this repository. All rights remain with its creator.
+11. Vercel. *Next.js*; Meta. *React*; *Motion* (motiondivision); *Tailwind CSS*; *lucide*; *js-yaml*; Microsoft. *Playwright* — see `THIRD_PARTY_NOTICES.md`.
 
 To cite this software, see [`CITATION.cff`](CITATION.cff).
 

@@ -26,7 +26,7 @@ export default function LegalPage() {
       </ul>
 
       <H>Personal data and privacy</H>
-      <p>Your CV, profile, connections export, results and keys are stored locally and excluded from version control. Data leaves your machine only when you choose to: search queries go to your search provider; if you enable a model provider, short post excerpts and a summary of target roles and skills (never your email, phone or full CV) go to that provider; if you set a webhook, result summaries go to it. The background video is fetched from the URL shown in Settings → Appearance (a third-party CDN by default); turn it off there to avoid that request. You are the data controller for any personal data of third parties you collect, including your connections list. Delete it when you no longer need it.</p>
+      <p>Your CV, profile, connections export, results and keys are stored locally and excluded from version control. Data leaves your machine only when you choose to: search queries go to your search provider; if you enable a model provider, short post excerpts and a summary of target roles and skills (never your email, phone or full CV) go to that provider; if you set a webhook, result summaries go to it. The background video is streamed from a third-party CDN; turn it off in Settings → Appearance to avoid that request. You are the data controller for any personal data of third parties you collect, including your connections list. Delete it when you no longer need it.</p>
 
       <H>AI-generated content</H>
       <p>Scores, summaries, drafts and tailored documents may be incomplete, outdated or wrong. Verify every fact before using it in an application or message. You are responsible for what you submit or send.</p>
@@ -35,7 +35,7 @@ export default function LegalPage() {
       <p>Visa, immigration, sponsorship and compensation information is informational only and is not legal, immigration or financial advice. Consult a qualified professional.</p>
 
       <H>Open-source attributions</H>
-      <p>Built on career-ops by Santiago Fernández de Valderrama (MIT) and ResumeSkills (MIT); see <code>THIRD_PARTY_NOTICES.md</code>. Runtime libraries include Next.js, React, Tailwind CSS, Motion (MIT), lucide-react, js-yaml and Playwright. The v2 visual design draws on UI UX Pro Max by Next Level Builder (MIT) as a reference; no code is copied. Full citations are in the README.</p>
+      <p>Built on career-ops by Santiago Fernández de Valderrama (MIT) and ResumeSkills (MIT); see <code>THIRD_PARTY_NOTICES.md</code>. Runtime libraries include Next.js, React, Tailwind CSS, Motion (MIT), lucide-react, js-yaml and Playwright. The v2 visual design draws on UI UX Pro Max by Next Level Builder (MIT) as a reference; no code is copied. The background video is streamed from its host, not redistributed; rights remain with its creator. Full citations are in the README.</p>
     </main>
   );
 }

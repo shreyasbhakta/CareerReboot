@@ -2,15 +2,13 @@
 
 import { useEffect, useRef } from "react";
 import { usePathname } from "next/navigation";
-import { useAppearance } from "@/lib/appearance";
-
-// Work pages sit on a heavier veil than the launcher so dense tables stay readable.
-const WORK_VEIL_FLOOR = 0.82;
+import { BACKGROUND_VIDEO_URL, VEIL, useVideoEnabled } from "@/lib/appearance";
 
 export function BackgroundVideo() {
-  const { video, videoUrl, dim } = useAppearance();
+  const video = useVideoEnabled();
   const ref = useRef<HTMLVideoElement>(null);
-  const veil = usePathname() === "/" ? dim : Math.max(dim, WORK_VEIL_FLOOR);
+  // Work pages get a heavier veil than the launcher so dense tables stay readable.
+  const veil = usePathname() === "/" ? VEIL.launcher : VEIL.work;
 
   useEffect(() => {
     const el = ref.current;
@@ -21,15 +19,14 @@ export function BackgroundVideo() {
     sync();
     reduce.addEventListener("change", sync);
     return () => reduce.removeEventListener("change", sync);
-  }, [videoUrl, video]);
+  }, [video]);
 
   return (
     <div aria-hidden="true" className="pointer-events-none fixed inset-0 -z-10 overflow-hidden">
       {video && (
         <video
           ref={ref}
-          key={videoUrl}
-          src={videoUrl}
+          src={BACKGROUND_VIDEO_URL}
           muted
           loop
           playsInline
