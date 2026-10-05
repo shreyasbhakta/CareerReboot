@@ -1,8 +1,7 @@
 import { useSyncExternalStore } from "react";
 
-// The project's background video (see README "Citations"). Streamed, not vendored.
-export const BACKGROUND_VIDEO_URL =
-  "https://d8j0ntlcm91z4.cloudfront.net/user_38xzZboKViGWJOttwIXH07lWA1P/hf_20260423_084718_72a17915-4964-4059-afcd-22d59399b72e.mp4";
+// Served from public/ so the background never depends on a remote host (see README "Citations").
+export const BACKGROUND_VIDEO_URL = "/background.mp4";
 
 // Share of the page background laid over the video: launcher, then work pages.
 export const VEIL = { launcher: 0.55, work: 0.82 } as const;

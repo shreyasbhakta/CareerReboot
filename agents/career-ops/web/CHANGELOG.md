@@ -1,5 +1,11 @@
 # Changelog
 
+## 2.1.0 (2026-10-05)
+
+### Fixes
+
+* **ui:** the background video ships with the app (`public/background.mp4`) instead of streaming from a CDN, so it still plays offline or if the remote link goes away.
+
 ## 2.0.0 — CareerReboot version 2 (2026-10-05)
 
 ### Features

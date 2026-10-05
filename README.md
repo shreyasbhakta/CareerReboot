@@ -6,7 +6,7 @@
 
 [![License](https://img.shields.io/badge/license-Apache%202.0-blue.svg)](LICENSE)
 [![Node](https://img.shields.io/badge/node-%3E%3D20.12-brightgreen)](#requirements)
-[![Version](https://img.shields.io/badge/version-2.0.0-informational)](CITATION.cff)
+[![Version](https://img.shields.io/badge/version-2.1.0-informational)](CITATION.cff)
 
 </div>
 
@@ -236,7 +236,7 @@ scripts/                 workspace tools (reset)
 - Only public, documented endpoints and a search provider you configure are used, under each provider's terms. LinkedIn is never accessed programmatically; the connections file is your own export, kept local.
 - Outputs (scores, summaries, drafts) are decision aids and may be wrong; verify before acting. Visa and compensation information is not legal or financial advice.
 - Third-party data remains the property of its authors; store excerpts and links for personal use only.
-- The background video streams from a third-party CDN, so opening the dashboard makes that one request; switch it off in Settings → Appearance.
+- The background video is served from the app itself (`agents/career-ops/web/public/background.mp4`), so it makes no outside request; switch it off in Settings → Appearance.
 - In-app notice: `/legal`. Licences of dependencies: [`THIRD_PARTY_NOTICES.md`](THIRD_PARTY_NOTICES.md).
 
 ## Citations
@@ -250,7 +250,7 @@ scripts/                 workspace tools (reset)
 7. Y Combinator. *Hacker News API*. https://github.com/HackerNews/API; Algolia. *HN Search API*. https://hn.algolia.com/api
 8. Greenhouse, Lever, Ashby, Workday public job-board APIs; Brave Software. *Brave Search API*. https://brave.com/search/api/; *SearXNG*. AGPL-3.0. https://github.com/searxng/searxng
 9. Next Level Builder. *UI UX Pro Max*. MIT. https://github.com/nextlevelbuilder/ui-ux-pro-max-skill — design reference for the v2 glass surfaces, gradient-ring buttons and accessibility checklist (no code vendored).
-10. Background video: `hf_20260423_084718_72a17915-4964-4059-afcd-22d59399b72e.mp4`, streamed from https://d8j0ntlcm91z4.cloudfront.net/user_38xzZboKViGWJOttwIXH07lWA1P/hf_20260423_084718_72a17915-4964-4059-afcd-22d59399b72e.mp4 — supplied by the project owner; not redistributed in this repository. All rights remain with its creator.
+10. Background video: `hf_20260423_084718_72a17915-4964-4059-afcd-22d59399b72e.mp4`, originally from https://d8j0ntlcm91z4.cloudfront.net/user_38xzZboKViGWJOttwIXH07lWA1P/hf_20260423_084718_72a17915-4964-4059-afcd-22d59399b72e.mp4 — supplied by the project owner and included at `agents/career-ops/web/public/background.mp4` with their permission. All rights remain with its creator.
 11. Vercel. *Next.js*; Meta. *React*; *Motion* (motiondivision); *Tailwind CSS*; *lucide*; *js-yaml*; Microsoft. *Playwright* — see `THIRD_PARTY_NOTICES.md`.
 
 To cite this software, see [`CITATION.cff`](CITATION.cff).
