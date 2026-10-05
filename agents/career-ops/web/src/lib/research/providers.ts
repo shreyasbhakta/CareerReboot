@@ -45,7 +45,9 @@ export function researchRoot(): string {
 // compared to the network calls that follow. A cached copy would mean edits
 // don't take effect until the whole web server restarts, silently.
 export function loadCandidateProfile(): CandidateProfile {
-  const file = path.join(researchRoot(), "candidate-profile.yml");
+  const local = path.join(researchRoot(), "candidate-profile.yml");
+  // Fresh clones only ship the placeholder example; the real profile is gitignored.
+  const file = fs.existsSync(/* turbopackIgnore: true */ local) ? local : path.join(researchRoot(), "candidate-profile.example.yml");
   const raw = fs.readFileSync(/* turbopackIgnore: true */ file, "utf8");
   return yaml.load(raw) as CandidateProfile;
 }

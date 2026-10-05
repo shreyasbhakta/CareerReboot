@@ -1,5 +1,23 @@
 # Changelog
 
+## 2.0.0 — CareerReboot version 2 (2026-10-05)
+
+### Features
+
+* **ui:** dimmed background video behind every page (can be switched off per browser in Settings); reduced-motion users get a still frame.
+* **ui:** new launcher with glass cards, pointer spotlight, gradient-ring buttons and an animated wordmark; glass sidebar.
+* **settings:** one Settings popup (launcher dock, sidebar, mobile drawer) for every per-user file: profile, Hiring Radar, job research and portals. Edits are validated, the previous version is kept as `.bak-*`, files are written owner-only.
+
+### Changes
+
+* **config:** personal values no longer ship in the repo. Hiring Radar's `config.example.yml` and the research `candidate-profile.example.yml` hold placeholders; real values live in git-ignored local files.
+* **research:** the scorer falls back to `candidate-profile.example.yml` until a local profile exists.
+
+### Fixes
+
+* **tests:** the font test checks the fonts actually vendored (Space Grotesk); the CLI coverage guard reads the AGENTS.md headless table instead of a removed doc. Unused Instrument Serif files removed.
+* **theme:** the toggle tints the browser chrome with the real theme colours.
+
 ## [0.10.0](https://github.com/career-ops-hq/career-ops/compare/web-v0.9.0...web-v0.10.0) (2026-09-03)
 
 

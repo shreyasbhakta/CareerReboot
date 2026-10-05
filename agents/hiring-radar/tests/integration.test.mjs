@@ -4,7 +4,7 @@ import { mkdtempSync, existsSync, readFileSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join, resolve } from 'node:path';
 import { spawnSync } from 'node:child_process';
-import { cfg, NOW, silentLogger, ctx } from './helpers.mjs';
+import { cfg, NOW, silentLogger, ctx, PERSONA } from './helpers.mjs';
 import { runScan } from '../scan.mjs';
 import { generateQueries, collector as webSearch } from '../collectors/web-search.mjs';
 import { collector as hn } from '../collectors/hn.mjs';
@@ -295,7 +295,7 @@ test('public JSON shape has the spec fields and no raw email', () => {
 });
 
 // ---- CLI / GitHub Actions command ---------------------------------------------------------------
-const cli = (args, env = {}) => spawnSync(process.execPath, [join(ROOT, 'scan.mjs'), ...args], { encoding: 'utf8', env: { PATH: process.env.PATH, HOME: process.env.HOME, ...env } });
+const cli = (args, env = {}) => spawnSync(process.execPath, [join(ROOT, 'scan.mjs'), ...args], { encoding: 'utf8', env: { PATH: process.env.PATH, HOME: process.env.HOME, HIRING_RADAR_CONFIG: PERSONA, ...env } });
 
 test('CLI: fixture dry run exits 0, prints scores, writes nothing', () => {
   const dir = dataDir();

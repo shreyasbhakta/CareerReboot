@@ -19,7 +19,7 @@ Hiring Radar is **discovery and scoring only**. It never sends a message, applie
 | Outreach | `agents/outreach` is a SKILL.md router over career-ops `email`/`contacto` modes — draft-only. | Integrated by (a) emitting `outreach` context in the JSON/MD and (b) one routing row in `agents/outreach/SKILL.md`. No code coupling. |
 | Config/profile | `config/profile.yml` (gitignored, personal) is canonical for name, target roles, proof points. | Read at runtime and overlaid on config. Contact details (email/phone) are **never** read. |
 | Notifications | None in the repo (no SMTP/Slack code). | Optional JSON webhook only; off by default. No new dependency. |
-| CI | There was no `.github/`. Deployment is a GCP VM (`deploy/gcp`). | New workflow added; GCP crontab can run the same command. |
+| CI | There was no `.github/`. Deployment is a VM (`deploy/vm`, GCP or AWS). | New workflow added; GCP crontab can run the same command. |
 | Tests | `agents/career-ops/test-all.mjs` imports `tests/helpers.mjs`, which is **not present** in this checkout, so it cannot run (pre-existing). `web/` has 492 tests, 2 pre-existing failures (font-asset assertion). | Hiring Radar ships its own self-contained `node:test` suite. Pre-existing failures documented, untouched. |
 | Data contract | `data/*` is gitignored (personal). | Outputs are **not committed**. In CI they are published as an artifact + job summary, and history persists via `actions/cache`. |
 

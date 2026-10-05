@@ -1,7 +1,7 @@
 // Every CLI with a documented headless invocation must be selectable in the web UI.
 //
 // This guards the drift that let Grok Build CLI go missing: it was wired into
-// doctor.mjs (VALID_CLIS), the scaffolder, docs/SUPPORTED_CLIS.md, the README
+// doctor.mjs (VALID_CLIS), the scaffolder, the AGENTS.md headless table, the README
 // and .grok/skills/, yet KNOWN in web/src/lib/clis.ts never listed it — so the
 // web UI silently could not run on it. Nothing tied the two lists together.
 //
@@ -19,22 +19,23 @@ import { fileURLToPath } from "node:url";
 
 const WEB = join(dirname(fileURLToPath(import.meta.url)), "..", "..");
 const CLIS_TS = join(WEB, "src", "lib", "clis.ts");
-const SUPPORTED_MD = join(WEB, "..", "docs", "SUPPORTED_CLIS.md");
+// The "Headless / Batch Mode" table in career-ops' AGENTS.md is the documented list.
+const AGENTS_MD = join(WEB, "..", "AGENTS.md");
 
 /** Binaries KNOWN can spawn. */
 function knownBins(src) {
   return new Set([...src.matchAll(/bin:\s*"([^"]+)"/g)].map((m) => m[1]));
 }
 
-/** Binaries docs/SUPPORTED_CLIS.md promises work headlessly. A CLI documented
- *  as interactive-only (Cursor, Kimi) is correctly absent from KNOWN — the web
- *  UI drives workers headlessly and has nothing to offer them. */
+/** Binaries the AGENTS.md headless table promises work headlessly. A CLI that is
+ *  interactive-only (Cursor, Kimi) is absent from that table and from KNOWN. */
 function documentedHeadlessBins(md) {
-  return new Set([...md.matchAll(/Headless\/Batch:\s*`([A-Za-z0-9_-]+)/g)].map((m) => m[1]));
+  const section = md.split(/^## Headless \/ Batch Mode$/m)[1]?.split(/^\*\*Parallel/m)[0] ?? "";
+  return new Set([...section.matchAll(/^\|[^|]+\|\s*`([A-Za-z0-9_-]+)/gm)].map((m) => m[1]));
 }
 
 const src = readFileSync(CLIS_TS, "utf8");
-const md = readFileSync(SUPPORTED_MD, "utf8");
+const md = readFileSync(AGENTS_MD, "utf8");
 
 test("the fixtures this guard reads still look like themselves", () => {
   // If either file is refactored past these regexes, the checks below would

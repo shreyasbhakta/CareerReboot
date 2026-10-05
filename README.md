@@ -6,7 +6,7 @@
 
 [![License](https://img.shields.io/badge/license-Apache%202.0-blue.svg)](LICENSE)
 [![Node](https://img.shields.io/badge/node-%3E%3D20.12-brightgreen)](#requirements)
-[![Version](https://img.shields.io/badge/version-1.1.0-informational)](CITATION.cff)
+[![Version](https://img.shields.io/badge/version-2.0.0-informational)](CITATION.cff)
 
 </div>
 
@@ -24,7 +24,7 @@ CareerReboot combines three capabilities behind one dashboard. Everything runs o
 
 ## Product modes
 
-The home page offers three entry points. The choice is stored in the browser and filters the navigation.
+The home page offers three entry points over a dimmed background video. The choice is stored in the browser and filters the navigation. The **Settings** button at the bottom of the home page (and in the sidebar) opens one popup for every per-user setting; see [Configuration](#configuration).
 
 | Mode | Includes |
 |---|---|
@@ -55,7 +55,7 @@ flowchart LR
 | Hiring Radar | `agents/hiring-radar` | Collect → normalise → score → deduplicate → persist → render → notify. Pure Node ESM, one dependency (`js-yaml`). |
 | career-ops | `agents/career-ops` | Application pipeline, ATS provider plugins, CV rendering, tracker. Reused by Hiring Radar (providers, CLI helpers, connection matcher). |
 | Outreach | `agents/outreach` | Skill that drafts messages from tracker and Hiring Radar context. Draft-only. |
-| Deploy | `deploy/` | GCP VM scripts; optional OmniRoute gateway. |
+| Deploy | `deploy/` | VM scripts for GCP or AWS; optional OmniRoute gateway. |
 
 ### Design principles
 
@@ -148,9 +148,10 @@ Node.js ≥ 20.12 and npm. Optional: Docker (SearXNG, OmniRoute), [uv](https://d
 
 ```bash
 git clone https://github.com/shreyasbhakta/CareerReboot.git && cd CareerReboot
-npm run setup                          # installs career-ops (no browser download) and hiring-radar
-cd agents/career-ops/web && npm ci     # dashboard dependencies
-cp agents/career-ops/config/profile.example.yml agents/career-ops/config/profile.yml   # your targeting profile
+npm run setup                          # installs career-ops (no browser download), hiring-radar and the dashboard
+```
+
+Then open the dashboard, click **Settings**, and create your local files from the examples (profile, Hiring Radar, job research, portals). Each starts from placeholders and is validated before it is saved.
 ```
 
 ## Running
@@ -162,17 +163,22 @@ cp agents/career-ops/config/profile.example.yml agents/career-ops/config/profile
 | Scan preview (writes nothing) | `npm run hiring-radar:dry-run` |
 | Scan options | `node agents/hiring-radar/scan.mjs --days 7 --source jobs --min-score 70` |
 | Validate a config override | `node agents/hiring-radar/scan.mjs --check-config path/to/config.yml` |
+| Start fresh (dry run, then `-- --yes`) | `npm run reset` moves generated data and caches to `.careerreboot-backups/`; config, secrets, CV and LinkedIn exports stay |
 
-Scheduling: the **Schedule** tab installs a user crontab entry; `deploy/gcp/crontab.example` covers a VM; `.github/workflows/hiring-radar.yml` runs daily at ~07:35 America/New_York and on demand (results published as a workflow artifact and job summary, history persisted with the Actions cache; nothing is committed).
+Scheduling: the **Schedule** tab installs a user crontab entry; `deploy/vm/crontab.example` covers a VM; `.github/workflows/hiring-radar.yml` runs daily at ~07:35 America/New_York and on demand (results published as a workflow artifact and job summary, history persisted with the Actions cache; nothing is committed).
 
 ## Configuration
 
-| Layer | Location | Purpose |
+Every per-user setting is a git-ignored local file next to a committed example that holds only placeholders. The **Settings** popup lists them all (registry: `agents/career-ops/web/src/lib/settings.ts`), validates edits, keeps a `.bak-*` copy of the previous version and writes with owner-only permissions. Nothing personal is committed.
+
+| Flow | Local file (git-ignored) | Example (committed) |
 |---|---|---|
-| Defaults | `agents/hiring-radar/config.example.yml` | Single source of every tunable. |
-| Local overrides | `agents/hiring-radar/config.yml` (git-ignored) | Edited in the dashboard or by hand; validated before saving. |
-| Profile | `agents/career-ops/config/profile.yml` | Name, target roles, proof points (contact details are never read). |
-| Secrets | `agents/hiring-radar/.env` or CI secrets | Keys and URLs. |
+| Profile: name, roles, narrative | `agents/career-ops/config/profile.yml` | `config/profile.example.yml` |
+| Hiring Radar: locations, roles, skills, scoring (overrides only) | `agents/hiring-radar/config.yml` | `config.example.yml` |
+| Job research scorer | `job-finding-research/candidate-profile.yml` | `candidate-profile.example.yml` |
+| Portals tracked by the scanner | `agents/career-ops/portals.yml` | `templates/portals.example.yml` |
+| Secrets | `agents/hiring-radar/.env` (Hiring Radar → Keys & data) or CI secrets | — |
+| Appearance: background video on/off, theme | browser storage | — |
 
 | Variable | Purpose |
 |---|---|
@@ -192,16 +198,18 @@ Secrets: `BRAVE_SEARCH_API_KEY`, `SEARXNG_URL`, provider keys, `HIRING_RADAR_WEB
 | Target | Reference |
 |---|---|
 | Local | This document |
-| Always-on VM | `deploy/gcp/README.md` (cron + systemd, reached over an SSH tunnel) |
+| Always-on VM | `deploy/vm/README.md`: GCP or AWS Lightsail, cron + systemd, reached over an SSH tunnel or Tailscale |
 | CI schedule | `.github/workflows/hiring-radar.yml` |
 | Optional services | `agents/career-ops/deploy/searxng` (search), `deploy/omniroute` (model gateway) |
+
+Nothing is hosted by default. CI's **Deploy readiness** step builds the production dashboard and lints the VM scripts on every pull request, so any green commit on `main` deploys as-is. Cheapest options: AWS Lightsail at $12/month (recommended) or GCP's free `e2-micro`; costs and trade-offs are in `deploy/vm/README.md`. Personal config and secrets are copied to the VM over SSH, never through git.
 
 ## Development
 
 ```bash
 npm test                      # Hiring Radar suite (offline, fixture-based)
-npm run test:all              # + career-ops syntax lint
-cd agents/career-ops/web && npx tsc --noEmit && npm test
+npm run test:web              # dashboard typecheck + tests
+npm run test:all              # everything CI runs (.github/workflows/ci.yml)
 npm run graph                 # refresh the Graphify code graph (uv tool install graphifyy)
 ```
 
@@ -216,9 +224,10 @@ npm run graph                 # refresh the Graphify code graph (uv tool install
 agents/career-ops        pipeline + dashboard (web/)
 agents/hiring-radar      scanner, scoring, storage, formatters, tests, skills
 agents/outreach          draft-only outreach skill
-deploy/                  GCP scripts, OmniRoute compose
+deploy/                  VM scripts (GCP/AWS), OmniRoute compose
 docs/architecture        design records
-.github/workflows        scheduled scan
+.github/workflows        CI on every PR, scheduled scan
+scripts/                 workspace tools (reset)
 ```
 
 ## Compliance
@@ -227,6 +236,7 @@ docs/architecture        design records
 - Only public, documented endpoints and a search provider you configure are used, under each provider's terms. LinkedIn is never accessed programmatically; the connections file is your own export, kept local.
 - Outputs (scores, summaries, drafts) are decision aids and may be wrong; verify before acting. Visa and compensation information is not legal or financial advice.
 - Third-party data remains the property of its authors; store excerpts and links for personal use only.
+- The background video streams from a third-party CDN, so opening the dashboard makes that one request; switch it off in Settings → Appearance.
 - In-app notice: `/legal`. Licences of dependencies: [`THIRD_PARTY_NOTICES.md`](THIRD_PARTY_NOTICES.md).
 
 ## Citations
@@ -239,7 +249,9 @@ docs/architecture        design records
 6. *Agent Skills specification*. Apache-2.0. https://github.com/agentskills/agentskills — `SKILL.md` format.
 7. Y Combinator. *Hacker News API*. https://github.com/HackerNews/API; Algolia. *HN Search API*. https://hn.algolia.com/api
 8. Greenhouse, Lever, Ashby, Workday public job-board APIs; Brave Software. *Brave Search API*. https://brave.com/search/api/; *SearXNG*. AGPL-3.0. https://github.com/searxng/searxng
-9. Vercel. *Next.js*; Meta. *React*; *Motion* (motiondivision); *Tailwind CSS*; *lucide*; *js-yaml*; Microsoft. *Playwright* — see `THIRD_PARTY_NOTICES.md`.
+9. Next Level Builder. *UI UX Pro Max*. MIT. https://github.com/nextlevelbuilder/ui-ux-pro-max-skill — design reference for the v2 glass surfaces, gradient-ring buttons and accessibility checklist (no code vendored).
+10. Background video: `hf_20260423_084718_72a17915-4964-4059-afcd-22d59399b72e.mp4`, streamed from https://d8j0ntlcm91z4.cloudfront.net/user_38xzZboKViGWJOttwIXH07lWA1P/hf_20260423_084718_72a17915-4964-4059-afcd-22d59399b72e.mp4 — supplied by the project owner; not redistributed in this repository. All rights remain with its creator.
+11. Vercel. *Next.js*; Meta. *React*; *Motion* (motiondivision); *Tailwind CSS*; *lucide*; *js-yaml*; Microsoft. *Playwright* — see `THIRD_PARTY_NOTICES.md`.
 
 To cite this software, see [`CITATION.cff`](CITATION.cff).
 

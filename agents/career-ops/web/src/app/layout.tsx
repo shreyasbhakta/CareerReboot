@@ -1,6 +1,7 @@
 import type { Metadata, Viewport } from "next";
 import { inter, instrumentSerif, instrumentSerifItalic } from "@/lib/fonts";
 import { AppShell } from "@/components/app-shell";
+import { BackgroundVideo } from "@/components/background-video";
 import "./globals.css";
 
 export const metadata: Metadata = {
@@ -34,6 +35,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
     >
       <body className="font-sans antialiased">
         <script dangerouslySetInnerHTML={{ __html: THEME_SCRIPT }} />
+        <BackgroundVideo />
         <AppShell>{children}</AppShell>
       </body>
     </html>

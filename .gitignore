@@ -35,3 +35,12 @@ Connections.csv
 # Graphify: commit only the report; the graph itself is regenerated with `npm run graph`
 **/graphify-out/*
 !**/graphify-out/GRAPH_REPORT.md
+
+# Job research — your scoring profile (copy candidate-profile.example.yml)
+job-finding-research/candidate-profile.yml
+
+# Snapshots the dashboard takes before overwriting a config file
+*.bak-*
+
+# `npm run reset` moves local data here instead of deleting it
+.careerreboot-backups/

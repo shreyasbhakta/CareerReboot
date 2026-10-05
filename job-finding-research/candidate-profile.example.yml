@@ -1,0 +1,95 @@
+# Candidate profile for the "Job Finding Research" scoring engine — EXAMPLE.
+#
+# Copy to candidate-profile.yml (gitignored) and replace the placeholders, or
+# edit it from the dashboard (bottom "Settings" button). The research scan reads
+# candidate-profile.yml when present and falls back to this file.
+#
+# It drives the deterministic fit-scoring in the /research tool, distinct from
+# career-ops's own config/profile.yml (which drives the LLM evaluation modes
+# like `oferta`/`auto-pipeline`). The two are allowed to diverge: this one is
+# tuned for fast, code-only keyword scoring, not narrative generation.
+
+location:
+  primary: ["your city", "your metro area"]
+  secondary_signals: ["remote us", "remote-us", "remote - us", "united states", "usa", "us-based"]
+  open_to_relocation: true
+  # A location matching one of these (and NOT primary/secondary) is treated as
+  # a foreign hire, not a "not in my exact city" case — scored well below the
+  # open_to_relocation floor. "Open to relocation" means within the US;
+  # domestic/international sponsorship is a separate, unverified question the
+  # skill flags for human review rather than guesses at.
+  international_signals:
+    - india
+    - hyderabad
+    - bangalore
+    - bengaluru
+    - united kingdom
+    - " uk"
+    - london
+    - germany
+    - berlin
+    - munich
+    - france
+    - paris
+    - singapore
+    - "apac"
+    - "emea"
+    - japan
+    - tokyo
+    - china
+    - philippines
+    - poland
+    - ireland
+    - dublin
+    - netherlands
+    - amsterdam
+    - spain
+    - italy
+    - brazil
+    - mexico
+    - canada
+    - toronto
+    - australia
+    - sydney
+
+seniority:
+  # Titles containing these are a comfortable fit — no penalty.
+  target: ["software engineer", "backend engineer", "full stack engineer", "platform engineer"]
+  # Present but manageable stretch — mild penalty, never a hard reject.
+  stretch: ["senior software engineer", "senior backend engineer", "sr. software engineer"]
+  # Meaningfully above current level — larger penalty, flagged as STRETCH tier candidate.
+  strong_stretch: ["staff engineer", "principal engineer", "engineering manager", "director of engineering"]
+  # Clearly out of scope regardless of keyword overlap.
+  exclude: ["intern", "internship", "co-op", "student"]
+
+# Keyword lists per skill group. The four group names are fixed (the scorer
+# reads them); the terms are yours.
+skills:
+  backend: ["python", "typescript", "node.js", "rest api", "sql", "postgresql"]
+  ai: ["llm", "rag", "prompt engineering"]
+  infra: ["aws", "docker", "kubernetes", "ci/cd"]
+  client_facing: ["stakeholder", "cross-functional", "requirements gathering"]
+
+signals:
+  production: ["production", "reliability", "on-call", "observability", "scale", "deployment"]
+  fde: ["forward deployed", "solutions engineer", "customer engineer"]
+  domain: ["your industry"]
+  ai_native: ["ai agent", "ai agents", "foundation model"]
+
+# Weights must sum to 100 — see job-finding-research/SKILL.md section "Fit
+# Scoring" for the full-strength (LLM-assisted) version of this rubric. This
+# is the cheap, deterministic pre-filter that runs before any LLM is involved.
+weights:
+  technical: 30
+  production: 20
+  fde_domain: 20
+  seniority: 15
+  location: 10
+  freshness: 5
+
+tiers:
+  apply_today_min: 88
+  recruiter_outreach_min: 80
+  watch_min: 70
+  stretch_min: 60
+  # below stretch_min = SKIP

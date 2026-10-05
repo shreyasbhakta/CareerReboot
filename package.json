@@ -1,15 +1,17 @@
 {
   "name": "careerreboot",
   "private": true,
+  "version": "2.0.0",
   "description": "Workspace convenience scripts. Each agent keeps its own package.json and dependencies.",
   "license": "Apache-2.0",
   "scripts": {
-    "setup": "npm --prefix agents/career-ops install --ignore-scripts && npm --prefix agents/hiring-radar ci",
+    "setup": "npm --prefix agents/career-ops install --ignore-scripts && npm --prefix agents/hiring-radar ci && npm --prefix agents/career-ops/web ci",
+    "reset": "node scripts/reset-local-data.mjs",
     "hiring-radar": "node agents/hiring-radar/scan.mjs",
     "hiring-radar:dry-run": "node agents/hiring-radar/scan.mjs --dry-run",
     "test": "npm --prefix agents/hiring-radar test",
-    "test:all": "npm --prefix agents/hiring-radar test && npm --prefix agents/career-ops run lint",
+    "test:web": "npm --prefix agents/career-ops/web run typecheck && npm --prefix agents/career-ops/web test",
+    "test:all": "npm --prefix agents/hiring-radar test && node --test scripts/*.test.mjs && npm --prefix agents/career-ops run lint && npm run test:web",
     "graph": "graphify update agents/hiring-radar && graphify update agents/career-ops/web/src"
-  },
-  "version": "1.1.0"
+  }
 }

@@ -91,6 +91,75 @@ html {
   }
 }
 
+/* ── v2 surfaces: liquid glass over the background video ─────────────────
+   Pattern references: ui-ux-pro-max-skill (MIT) "Glassmorphism" and
+   "Liquid Glass" styles, adapted to these tokens. */
+@property --border-angle {
+  syntax: "<angle>";
+  inherits: false;
+  initial-value: 0deg;
+}
+
+@layer components {
+  .glass {
+    background: color-mix(in srgb, var(--surface) 62%, transparent);
+    border: 1px solid color-mix(in srgb, var(--fg) 10%, transparent);
+    box-shadow: inset 0 1px 0 color-mix(in srgb, #fff 8%, transparent), 0 20px 50px -24px rgb(0 0 0 / 0.45);
+    backdrop-filter: blur(18px) saturate(140%);
+  }
+
+  /* Pointer spotlight: the component writes --mx/--my on pointermove. */
+  .spotlight { position: relative; isolation: isolate; }
+  .spotlight::before {
+    content: "";
+    position: absolute;
+    inset: 0;
+    z-index: -1;
+    border-radius: inherit;
+    opacity: 0;
+    background: radial-gradient(420px circle at var(--mx, 50%) var(--my, 0%), color-mix(in srgb, var(--color-brand) 22%, transparent), transparent 60%);
+    transition: opacity 300ms ease;
+  }
+  .spotlight:hover::before, .spotlight:focus-visible::before { opacity: 1; }
+
+  /* Rotating gradient ring + a light sweep on hover: the v2 call-to-action. */
+  .btn-shine {
+    position: relative;
+    overflow: hidden;
+    border: 1px solid transparent;
+    background:
+      linear-gradient(var(--btn-fill, color-mix(in srgb, var(--surface) 80%, transparent)), var(--btn-fill, color-mix(in srgb, var(--surface) 80%, transparent))) padding-box,
+      conic-gradient(from var(--border-angle), var(--color-brand), var(--color-brand-secondary), #f0abfc, var(--color-brand)) border-box;
+    animation: border-spin 4s linear infinite;
+  }
+  .btn-shine::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    transform: translateX(-120%) skewX(-20deg);
+    background: linear-gradient(90deg, transparent, color-mix(in srgb, #fff 28%, transparent), transparent);
+    transition: transform 700ms ease;
+  }
+  .btn-shine:hover::after { transform: translateX(120%) skewX(-20deg); }
+
+  .text-gradient {
+    background: linear-gradient(100deg, var(--landing) 10%, var(--color-brand) 45%, var(--color-brand-secondary) 70%, var(--landing) 95%);
+    background-size: 220% auto;
+    -webkit-background-clip: text;
+    background-clip: text;
+    color: transparent;
+    animation: text-pan 8s ease-in-out infinite alternate;
+  }
+}
+
+@keyframes border-spin { to { --border-angle: 360deg; } }
+@keyframes text-pan { to { background-position: 100% center; } }
+
+@media (prefers-reduced-motion: reduce) {
+  .btn-shine, .text-gradient { animation: none; }
+  .btn-shine::after { display: none; }
+}
+
 /* ── Animations ported from the docs home ───────────────────────────────── */
 @keyframes fade-in-delayed {
   from { opacity: 0; }

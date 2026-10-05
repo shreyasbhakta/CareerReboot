@@ -11,9 +11,10 @@ depend on.
   detection, recruiter research, outreach drafting, tiering). This is meant
   to be *read and applied by an AI agent* (Claude Code, this assistant, etc.)
   on top of the tool's output — it's not something the code executes.
-- [`candidate-profile.yml`](candidate-profile.yml) — the keyword/weights
-  config the deterministic scorer reads. Edit this to retune scoring; it's a
-  user-layer file, never overwritten.
+- [`candidate-profile.example.yml`](candidate-profile.example.yml) — the
+  keyword/weights config the deterministic scorer reads, with placeholders.
+  Copy it to `candidate-profile.yml` (gitignored) to retune scoring; the scan
+  uses the example until that file exists.
 
 ## What this is *not*
 
