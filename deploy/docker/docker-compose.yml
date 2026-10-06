@@ -1,0 +1,23 @@
+# CareerReboot stable runtime. Start or upgrade it with deploy/docker/stable.sh, which builds
+# careerreboot:stable from a release tag. Loopback only: the dashboard has no login, so never
+# publish this port on other interfaces.
+name: careerreboot
+services:
+  stable:
+    image: careerreboot:stable
+    container_name: careerreboot-stable
+    restart: unless-stopped
+    init: true
+    ports:
+      - "127.0.0.1:${CAREERREBOOT_PORT:-3200}:3000"
+    environment:
+      TZ: ${CAREERREBOOT_TZ:-America/New_York}
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    volumes:
+      # Your checkout: only the paths in personal-paths are used; code comes from the image.
+      - ../..:/host
+      # The crontab, so schedules set in the dashboard survive upgrades.
+      - cron:/var/spool/cron/crontabs
+volumes:
+  cron:

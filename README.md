@@ -198,11 +198,12 @@ Secrets: `BRAVE_SEARCH_API_KEY`, `SEARXNG_URL`, provider keys, `HIRING_RADAR_WEB
 | Target | Reference |
 |---|---|
 | Local | This document |
+| Stable release on this machine | `deploy/docker/README.md`: the newest release tag in Docker on `127.0.0.1:3200`, using your local config and data, while you edit the checkout |
 | Always-on VM | `deploy/vm/README.md`: GCP or AWS Lightsail, cron + systemd, reached over an SSH tunnel or Tailscale |
 | CI schedule | `.github/workflows/hiring-radar.yml` |
 | Optional services | `agents/career-ops/deploy/searxng` (search), `deploy/omniroute` (model gateway) |
 
-Nothing is hosted by default. CI's **Deploy readiness** step builds the production dashboard and lints the VM scripts on every pull request, so any green commit on `main` deploys as-is. Cheapest options: AWS Lightsail at $12/month (recommended) or GCP's free `e2-micro`; costs and trade-offs are in `deploy/vm/README.md`. Personal config and secrets are copied to the VM over SSH, never through git.
+Nothing is hosted by default. CI's **Deploy readiness** step builds the production dashboard, lints the VM and Docker scripts and validates the Docker compose file on every pull request, so any green commit on `main` deploys as-is. Cheapest options: AWS Lightsail at $12/month (recommended) or GCP's free `e2-micro`; costs and trade-offs are in `deploy/vm/README.md`. Personal config and secrets are copied to the VM over SSH, never through git.
 
 ## Development
 
@@ -224,7 +225,7 @@ npm run graph                 # refresh the Graphify code graph (uv tool install
 agents/career-ops        pipeline + dashboard (web/)
 agents/hiring-radar      scanner, scoring, storage, formatters, tests, skills
 agents/outreach          draft-only outreach skill
-deploy/                  VM scripts (GCP/AWS), OmniRoute compose
+deploy/                  VM scripts (GCP/AWS), stable Docker runtime, OmniRoute compose
 docs/architecture        design records
 .github/workflows        CI on every PR, scheduled scan
 scripts/                 workspace tools (reset)
