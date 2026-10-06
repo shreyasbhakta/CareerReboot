@@ -41,7 +41,8 @@ export const collector = {
     const jc = cfg.sources.jobs;
     const { list, from } = candidateCompanies(cfg, env);
     const picked = pickCompanies(list, jc.max_companies, now);
-    logger.info(`Source: jobs — ${picked.length}/${list.length} companies (from ${from})`);
+    const cap = picked.length < list.length ? '; capped by sources.jobs.max_companies, rotated daily' : '';
+    logger.info(`Source: jobs — ${picked.length}/${list.length} companies (from ${from}${cap})`);
 
     const { loadProviders, resolveProvider } = await import(pathToFileURL(join(providerDir, '_registry.mjs')).href);
     const { makeHttpCtx } = await import(pathToFileURL(join(providerDir, '_http.mjs')).href);

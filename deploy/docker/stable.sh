@@ -6,16 +6,16 @@ set -euo pipefail
 here="$(cd "$(dirname "$0")" && pwd)"
 repo="$(git -C "$here" rev-parse --show-toplevel)"
 
-git -C "$repo" fetch --tags --quiet 2>/dev/null || echo "Offline; using local tags."
-tag="${1:-$(git -C "$repo" tag --list 'v*' --sort=-v:refname | head -n 1)}"
-[ -n "$tag" ] || { echo "No release tag found." >&2; exit 1; }
-git -C "$repo" cat-file -e "$tag:deploy/docker/Dockerfile" 2>/dev/null \
-  || { echo "$tag predates the Docker runtime; pick a newer tag." >&2; exit 1; }
+url="$(git -C "$repo" remote get-url origin)"
+tag="${1:-$(git ls-remote --tags --refs --sort=-v:refname "$url" 'v*' | head -n 1 | sed 's#.*refs/tags/##')}"
+[ -n "$tag" ] || { echo "No release tag found on $url." >&2; exit 1; }
 
-# The build context is the tag's tree, so uncommitted edits and iCloud-evicted node_modules never leak in.
+# A fresh clone of the pushed tag: uncommitted edits and the iCloud-synced .git never reach the build.
 ctx="$(mktemp -d)"
 trap 'rm -rf "$ctx"' EXIT
-git -C "$repo" archive "$tag" | tar -x -C "$ctx"
+git clone --quiet --depth 1 --branch "$tag" "$url" "$ctx"
+rm -rf "$ctx/.git"
+[ -f "$ctx/deploy/docker/Dockerfile" ] || { echo "$tag predates the Docker runtime; pick a newer tag." >&2; exit 1; }
 
 docker build -f "$ctx/deploy/docker/Dockerfile" --label "careerreboot.tag=$tag" -t "careerreboot:${tag//\//-}" -t careerreboot:stable "$ctx"
 docker compose -f "$here/docker-compose.yml" up -d --force-recreate
