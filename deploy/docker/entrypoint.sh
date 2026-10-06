@@ -42,6 +42,7 @@ current=$(crontab -l 2>/dev/null | sed "/^$ENV_BEGIN\$/,/^$ENV_END\$/d" || true)
 
 # The same loopback rewrite for scans started from the dashboard.
 for kv in $(crontab -l | sed -n "/^$ENV_BEGIN\$/,/^$ENV_END\$/p" | grep -E '^[A-Z_]+=https?://host\.docker\.internal[^[:space:]]*$' || true); do
+  # shellcheck disable=SC2163 # kv is a whole KEY=value pair
   export "$kv"
 done
 
