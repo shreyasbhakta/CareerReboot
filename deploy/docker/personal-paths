@@ -1,0 +1,27 @@
+# Gitignored personal files and folders, relative to the repo root. The stable
+# container links each one that exists on the host over the image's copy, so code
+# comes from the release tag and everything personal stays in your checkout.
+agents/career-ops/.env
+agents/career-ops/cv.md
+agents/career-ops/resume.tex
+agents/career-ops/article-digest.md
+agents/career-ops/voice-dna.md
+agents/career-ops/portals.yml
+agents/career-ops/config/profile.yml
+agents/career-ops/config/plugins.yml
+agents/career-ops/config/cv-facts.json
+agents/career-ops/config/benchmarks.yml
+agents/career-ops/modes/_profile.md
+agents/career-ops/modes/_custom.md
+agents/career-ops/modes/_brief.md
+agents/career-ops/data
+agents/career-ops/reports
+agents/career-ops/output
+agents/career-ops/jds
+agents/career-ops/interview-prep
+agents/career-ops/writing-samples
+agents/career-ops/documents
+agents/career-ops/.career-ops-backups
+agents/hiring-radar/.env
+agents/hiring-radar/config.yml
+job-finding-research/candidate-profile.yml

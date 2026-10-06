@@ -11,7 +11,14 @@ import { randomUUID } from "node:crypto";
 //   - backup: optionally snapshot the prior contents to {file}.bak-{ts} before
 //     overwriting, so a bad write is recoverable even though user files are gitignored.
 
-export function atomicWrite(file: string, content: string): void {
+// A symlinked user file (the Docker stable runtime links them to the host) is written through
+// to its target; renaming onto the link itself would silently replace it with a local copy.
+function writeTarget(file: string): string {
+  return fs.lstatSync(file, { throwIfNoEntry: false })?.isSymbolicLink() ? fs.realpathSync(file) : file;
+}
+
+export function atomicWrite(link: string, content: string): void {
+  const file = writeTarget(link);
   fs.mkdirSync(path.dirname(file), { recursive: true });
   const tmp = `${file}.tmp-${process.pid}-${randomUUID()}`;
   fs.writeFileSync(tmp, content, "utf8");
@@ -19,7 +26,8 @@ export function atomicWrite(file: string, content: string): void {
 }
 
 /** Snapshot the file (if it has content) to a timestamped .bak before a write. */
-export function backup(file: string): string | null {
+export function backup(link: string): string | null {
+  const file = writeTarget(link);
   try {
     const cur = fs.readFileSync(file, "utf8");
     if (!cur.trim()) return null;
