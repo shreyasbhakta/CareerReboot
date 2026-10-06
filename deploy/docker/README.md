@@ -56,5 +56,5 @@ docker exec careerreboot-stable crontab -l
   on them in dev.
 - Docker Desktop only runs while you are logged in and the Mac is awake; for a host that is up
   when the laptop is closed, see `deploy/vm/README.md`.
-- With the checkout in iCloud Drive, files iCloud has offloaded stall reads. Keep "Optimize Mac
-  Storage" off for this folder, or move the checkout out of iCloud.
+- Keep the checkout out of iCloud Drive (Desktop & Documents sync). Docker cannot read a file
+  iCloud has offloaded: reads fail with "Resource deadlock avoided" instead of downloading it.
