@@ -1,6 +1,8 @@
 import { termRegex } from '../lib/text.mjs';
 
 const US_STATE = /,\s*(?:AL|AK|AZ|AR|CA|CO|CT|DE|FL|GA|HI|ID|IL|IN|IA|KS|KY|LA|ME|MD|MA|MI|MN|MS|MO|MT|NE|NV|NH|NJ|NM|NY|NC|ND|OH|OK|OR|PA|RI|SC|SD|TN|TX|UT|VT|VA|WA|WV|WI|WY|DC)\b/;
+// State codes that are also country codes ("Berlin, DE", "Pune, IN", "Toronto, ON, CA", "Bogotá, CO").
+const COUNTRY_CODE_STATES = new Set(['CA', 'DE', 'IN', 'IL', 'AR', 'CO']);
 const US_CITIES = ['san francisco', 'seattle', 'austin', 'boston', 'chicago', 'los angeles', 'denver', 'atlanta', 'washington', 'palo alto', 'mountain view', 'sunnyvale', 'san jose', 'san mateo', 'menlo park', 'redwood city', 'miami', 'dallas', 'houston', 'philadelphia', 'pittsburgh', 'san diego', 'portland', 'raleigh'];
 
 const cache = new WeakMap();
@@ -31,7 +33,8 @@ export function classifyLocation(locationText, cfg) {
   const hits = (list) => list.filter((x) => x.re.test(text)).map((x) => x.term);
   const home = hits(c.home), remote = hits(c.remote), nonUs = hits(c.nonUs), usTerms = hits(c.us), usCities = hits(c.usCities);
   const state = text.match(US_STATE)?.[0].replace(/^,\s*/, '');
-  const us = usTerms.length > 0 || Boolean(state) || usCities.length > 0;
+  const stateIsUs = Boolean(state) && !(COUNTRY_CODE_STATES.has(state) && nonUs.length);
+  const us = usTerms.length > 0 || usCities.length > 0 || stateIsUs;
   const matches = [...new Set([...home, ...remote, ...usTerms, ...usCities, ...(state ? [state] : []), ...nonUs])].slice(0, 4);
   const out = (kind) => ({ kind, score: s[kind], drop: kind === 'non_us' && !!cfg.location.drop_non_us, matches });
   if (!text) return out('unknown');

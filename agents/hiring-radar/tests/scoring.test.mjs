@@ -68,6 +68,9 @@ test('location classification', () => {
   assert.equal(classifyLocation('London, UK', c).drop, true);
   assert.equal(classifyLocation('Remote (EMEA)', c).kind, 'non_us');
   assert.equal(classifyLocation('', c).kind, 'unknown');
+  assert.equal(classifyLocation('Berlin, DE', c).kind, 'non_us', 'DE is Germany here, not Delaware');
+  assert.equal(classifyLocation('Bengaluru, KA, IN', c).kind, 'non_us', 'IN is India here, not Indiana');
+  assert.equal(classifyLocation('Wilmington, DE', c).kind, 'us_other');
   assert.equal(classifyLocation('REMOTE OR ONSITE', c).kind, 'remote_us', 'OR must not read as the state of Oregon');
 });
 
