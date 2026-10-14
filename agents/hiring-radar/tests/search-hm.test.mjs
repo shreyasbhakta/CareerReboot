@@ -6,7 +6,7 @@ import { join } from 'node:path';
 import { cfg, silentLogger } from './helpers.mjs';
 import { searchHm } from '../search-hm.mjs';
 import { parseLinkedInJobUrl, parseJobPostingLd, findReportsTo, findTeam, cleanTitle, cleanCompany } from '../hm/job.mjs';
-import { queryContext, expandTemplates, peopleFromHit, rankCandidates, mentionsCompany, pickFunction } from '../hm/research.mjs';
+import { queryContext, expandTemplates, peopleFromHit, rankCandidates, mentionsCompany, pickFunction, timeFromUrl, isOtherCompany } from '../hm/research.mjs';
 
 const JOB_URL = 'https://job-boards.greenhouse.io/acmecorp/jobs/123456';
 const GH = {
@@ -93,12 +93,30 @@ test('search-hm: live-run regressions (similar company names, brand accounts, ol
   assert.equal(hit('Ana Ruiz - Engineering Manager - Cohere | LinkedIn', 'Experience: Cohere · Toronto', 'https://www.linkedin.com/in/ana').length, 1);
   assert.deepEqual(hit('Cohere OG on X: Cohere is hiring a Member of Technical Staff', '', 'https://x.com/cohereog/status/1'), [], 'brand accounts are not people');
   const old = hit('Ed Kim on LinkedIn: We are hiring a Member of Technical Staff at Cohere', 'hiring', 'https://www.linkedin.com/posts/ed_x', '2023-03-01T00:00:00Z');
-  assert.deepEqual(old[0].evidence.slice(0, 1), ['hiring_post'], 'an old post is an earlier opening');
-  assert.match(old[0].quote, /^\[2023-03-01\] /);
+  assert.deepEqual(old, [], 'an old post is about an earlier opening');
+  const fresh = hit('Ed Kim on LinkedIn: We are hiring a Member of Technical Staff at Cohere', 'hiring', 'https://www.linkedin.com/posts/ed_x', '2026-09-01T00:00:00Z');
+  assert.equal(fresh[0].evidence[0], 'posted_this_job');
+  assert.match(fresh[0].quote, /^\[2026-09-01\] /);
   const talent = hit('Chris Smith - Director Talent Acquisition - Cohere | LinkedIn', 'Cohere', 'https://www.linkedin.com/in/chris');
   assert.ok(!talent[0].evidence.includes('leader_title') && talent[0].evidence.includes('recruiter_title'));
   assert.equal(hit('Q &amp;amp; A - x', 'Ana Ruiz, Director of Engineering at Cohere &amp;#x27;s', 'https://cohere.com/blog')[0]?.quote.includes('&amp;'), false);
   assert.equal(cleanCompany('0020 PayPal, Inc.'), 'PayPal');
   assert.equal(pickFunction('Member of Technical Staff', c.hm_search).id, 'engineering');
   assert.equal(pickFunction('Associate', c.hm_search, 'sales sales account executive pipeline sales quota').id, 'sales');
+});
+
+test('search-hm: second live round (dates from ids, boilerplate, education, departures, longer names)', () => {
+  const c = cfg();
+  const now = Date.parse('2026-10-14');
+  const ctx = { ...queryContext({ title: 'Software Engineer', company: 'Cohere', team: '', location: 'Austin, TX' }, c), reportsTo: '' };
+  const hit = (title, snippet, url) => peopleFromHit({ url, title, snippet, provider: 'brave' }, ctx, c, now);
+  assert.equal(timeFromUrl('https://www.linkedin.com/posts/x_hiring-activity-6885000000000000000-abcd'), Number(6885000000000000000n >> 22n));
+  assert.deepEqual(hit('Ed Kim on LinkedIn: hiring a Software Engineer at Cohere', 'hiring', 'https://www.linkedin.com/posts/ed_x-activity-6885000000000000000-ab'), [], 'a 2022 post (date from its id) is ignored');
+  assert.deepEqual(hit('Cohere Health is hiring | Julian Kutman', 'Cohere Health is hiring a Software Engineer', 'https://www.linkedin.com/posts/julian_x'), [], 'every mention is a longer company name');
+  assert.deepEqual(hit('Megan McCreary on LinkedIn: grateful for my time at Cohere', 'Cohere', 'https://www.linkedin.com/posts/m_x'), [], 'people who left are dropped');
+  const kartik = hit('Kartik Agarwaal on LinkedIn: Software Engineer at Cohere', 'Login to LinkedIn to keep in touch with people you know', 'https://www.linkedin.com/posts/k_x');
+  assert.ok(kartik.every((p) => !p.evidence.includes('posted_this_job') && !/Login/.test(p.quote)), 'boilerplate is not evidence and an undated post is not "this job"');
+  const sneha = hit('Sneha Swamy - Engineering Manager - Cohere | LinkedIn', 'Experience: Cohere · Education: University of Texas at Austin · Location: Omaha', 'https://www.linkedin.com/in/sneha');
+  assert.ok(!sneha[0].evidence.includes('location_match'));
+  assert.ok(isOtherCompany('Cohere Technology Group', 'Cohere'));
 });

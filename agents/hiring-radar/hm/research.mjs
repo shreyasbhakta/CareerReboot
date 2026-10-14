@@ -12,7 +12,13 @@ import {
 
 const COMPANY_SUFFIX = /\b(inc|incorporated|llc|ltd|limited|corp|corporation|co|company|plc|pbc|gmbh|sa|ag|technologies|technology|labs|hq)\b/g;
 // Words that can follow a company name without making it a different company ("Cohere AI", "Acme Group").
-const SAME_COMPANY_TAIL = new Set(['ai', 'group', 'holdings', 'global', 'us', 'usa', 'na', 'team', 'careers', 'jobs']);
+const SAME_COMPANY_TAIL = new Set(['ai', 'global', 'us', 'usa', 'na', 'team', 'careers', 'jobs']);
+// Snippet text that is site chrome, not anything the person wrote.
+const BOILERPLATE = /\b(log ?in|sign in|join now|sign up) to (linkedin|see|view|keep)|agree & join|by clicking continue|cookie policy|1 billion members/i;
+// Phrases that say the person has left the company.
+const DEPARTED = /\b(my time at|last day at|moving on from|farewell|said goodbye|no longer at|left \w+ (after|to))\b/i;
+// LinkedIn activity ids and X status ids carry their creation time in the high bits.
+const X_EPOCH = 1288834974657n;
 const BRAND_WORDS = /\b(official|careers?|jobs|hiring|news|updates|team|og|fans?|hq|insider|daily|stock|investors?)\b/i;
 const DAY_MS = 864e5;
 const FORMER = /\b(former(ly)?|ex-|previously|past|alum(nus|na|ni)?|retired)\b/i;
@@ -61,6 +67,14 @@ export function isOtherCompany(phrase, company) {
   return p.slice(key.length + 1).split(' ').some((w) => !SAME_COMPANY_TAIL.has(w));
 }
 
+/** Every mention of the company runs on into another capitalized word ("Cohere Health is hiring"). */
+export function onlyLongerName(text, company) {
+  const name = company.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+  const all = [...String(text).matchAll(new RegExp(`\\b${name}\\b(?:\\s+([A-Z][\\w&'’-]*))?`, 'gi'))];
+  const sameCompany = (w) => SAME_COMPANY_TAIL.has(w.toLowerCase()) || !companyKey(w);
+  return all.length > 0 && all.every((m) => m[1] && /^[A-Z]/.test(m[1]) && !sameCompany(m[1]));
+}
+
 /** The hit names a different employer that only shares the company's first word(s). */
 function namesOtherCompany(phrases, company) {
   const relevant = phrases.filter((x) => mentionsCompany(x, company) || isOtherCompany(x, company));
@@ -70,6 +84,14 @@ function namesOtherCompany(phrases, company) {
 /** Brand / fan accounts ("Palantir OG", "Acme Careers") are not people. */
 export function looksLikeBrand(name, company) {
   return mentionsCompany(name, company) || BRAND_WORDS.test(name);
+}
+
+/** Creation time encoded in a LinkedIn activity / X status URL, else null. */
+export function timeFromUrl(url) {
+  const li = String(url).match(/(?:activity[-:]|ugcPost[-:]|share[-:])(\d{18,20})/i)?.[1];
+  if (li) return Number(BigInt(li) >> 22n);
+  const x = String(url).match(/(?:x|twitter)\.com\/[^/]+\/status\/(\d{15,20})/i)?.[1];
+  return x ? Number((BigInt(x) >> 22n) + X_EPOCH) : null;
 }
 
 /** ISO date or "3 months ago" -> ms epoch, else null. */
@@ -140,7 +162,9 @@ function titleEvidence(personTitle, ctx, cfg) {
 function contextEvidence(text, ctx) {
   const ev = [];
   if (ctx.team && hasAll(text, ctx.team)) ev.push('team_match');
-  if (ctx.location && normalizeText(text).includes(normalizeText(ctx.location))) ev.push('location_match');
+  // Where someone studied is not where they work.
+  const work = String(text).replace(/Education:[^·|\n]*/gi, ' ').replace(/\b(University|College|School|Institute) of [A-Z][\w ]*/g, ' ');
+  if (ctx.location && normalizeText(work).includes(normalizeText(ctx.location))) ev.push('location_match');
   return ev;
 }
 
@@ -169,11 +193,12 @@ const SNIPPET_PERSON = /\b([A-Z][a-z'’-]+(?:\s+[A-Z][a-z'’.-]+){1,2}),\s+(?:
 const clean = (s) => decodeEntities(decodeEntities(String(s || '')).replace(/<[^>]+>/g, '')).replace(/\s+/g, ' ').trim();
 
 export function peopleFromHit(rawHit, ctx, cfg, now = Date.now()) {
-  const hit = { ...rawHit, title: clean(rawHit.title), snippet: clean(rawHit.snippet) };
+  const snippet = clean(rawHit.snippet);
+  const hit = { ...rawHit, title: clean(rawHit.title), snippet: BOILERPLATE.test(snippet) ? '' : snippet };
   const text = `${hit.title}\n${hit.snippet}`;
-  if (namesOtherCompany(employerPhrases(text), ctx.company)) return [];
+  if (namesOtherCompany(employerPhrases(text), ctx.company) || DEPARTED.test(text)) return [];
   const atCompany = mentionsCompany(text, ctx.company);
-  const at = hitTime(hit.date, now);
+  const at = timeFromUrl(hit.url) ?? hitTime(hit.date, now);
   const dated = at ? `[${new Date(at).toISOString().slice(0, 10)}] ` : '';
   const isLinkedIn = /linkedin\.com/i.test(hit.url);
   const isPost = /linkedin\.com\/(posts|feed\/update|pulse)\/|(x|twitter)\.com\/[^/]+\/status\//i.test(hit.url);
@@ -188,12 +213,12 @@ export function peopleFromHit(rawHit, ctx, cfg, now = Date.now()) {
   if (isPost) {
     const name = postAuthorFromTitle(hit.title);
     if (!name) return out;
-    const aboutJob = hasAll(text, ctx.title);
+    if (onlyLongerName(text, ctx.company)) return out;
+    const aboutJob = normalizeText(text).includes(normalizeText(ctx.title));
     const hiring = HIRING_WORDS.test(text);
-    if (!atCompany && !aboutJob) return out;
-    // An old post with the same title is usually an earlier opening, not this one.
-    const recent = at === null || now - at <= cfg.hm_search.post_max_age_days * DAY_MS;
-    const ev = aboutJob && recent && (atCompany || hiring) ? ['posted_this_job'] : hiring && atCompany ? ['hiring_post'] : [];
+    // An old hiring post is about an earlier opening; it says nothing about who owns this one.
+    if (at !== null && now - at > cfg.hm_search.post_max_age_days * DAY_MS) return out;
+    const ev = aboutJob && at !== null && (atCompany || hiring) ? ['posted_this_job'] : hiring && atCompany ? ['hiring_post'] : [];
     if (!ev.length) return out;
     push({ name, title: '', profileUrl: postProfileUrl(hit.url), evidence: [...ev, ...(atCompany ? ['profile_at_company'] : []), ...contextEvidence(text, ctx)] });
     return out;
@@ -215,7 +240,7 @@ export function peopleFromHit(rawHit, ctx, cfg, now = Date.now()) {
   }
 
   // Company team pages, blogs, news: "Jane Doe, Director of Engineering" next to the company name.
-  if (!atCompany || isLinkedIn) return out;
+  if (!atCompany || isLinkedIn || onlyLongerName(text, ctx.company)) return out;
   for (const m of String(hit.snippet || '').matchAll(SNIPPET_PERSON)) {
     const ev = titleEvidence(m[2], ctx, cfg);
     if (ev.length) push({ name: m[1], title: m[2].trim(), evidence: ['profile_at_company', ...ev, ...contextEvidence(text, ctx)] });

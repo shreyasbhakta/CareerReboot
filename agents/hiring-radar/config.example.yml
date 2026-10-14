@@ -188,7 +188,7 @@ hm_search:
   # searxng -> SEARXNG_URL · brave -> BRAVE_SEARCH_API_KEY · serper -> SERPER_API_KEY (Google results)
   # exa -> EXA_API_KEY (people-aware search) · hunter -> HUNTER_API_KEY (company staff directory)
   providers: [brave, serper, searxng, exa, hunter]
-  max_queries: 12               # per search provider; each query is one API request
+  max_queries: 16               # per search provider; each query is one API request
   results_per_query: 10
   hunter_limit: 10
   hunter_extra_departments: [hr]   # also list recruiters / HR at the company
@@ -205,6 +205,8 @@ hm_search:
     - 'site:linkedin.com/in "{company}" (recruiter OR "talent acquisition") {function}'
     - 'site:linkedin.com/posts "{company}" hiring {function}'
     - '(site:x.com OR site:twitter.com) "{company}" hiring "{title}"'
+    - 'site:linkedin.com/in "{company}" "{team}" (manager OR lead OR head OR director)'
+    - 'site:linkedin.com/posts "{company}" "{team}" hiring'
     - '"{company}" "{team}" team "{leader}"'
     - 'site:linkedin.com/in "{company}" "{leader}" "{location}"'
   # Exa understands plain-language people queries (category: people).
