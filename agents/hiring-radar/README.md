@@ -33,7 +33,7 @@ Works with zero keys (Hacker News "Who is hiring?" + public ATS boards). Add a s
 |---|---|
 | `SEARXNG_URL` | Self-hosted search (`agents/career-ops/deploy/searxng`). Also enables hiring-person lookup. |
 | `BRAVE_SEARCH_API_KEY` | Brave Search API. |
-| `SERPER_API_KEY`, `EXA_API_KEY`, `HUNTER_API_KEY` | Extra people-search sources for Search HM (Google results, people-aware search, company staff directory). |
+| `SERPER_API_KEY`, `SERPAPI_API_KEY`, `EXA_API_KEY`, `HUNTER_API_KEY` | Extra people-search sources for Search HM (Google results via Serper or SerpApi, people-aware search, company staff directory). |
 | `MODEL_PROVIDER` (+ `MODEL_NAME`, `MODEL_BASE_URL`, provider key) | Opt-in LLM for ambiguous posts and short explanations. |
 | `LINKEDIN_CONNECTIONS_CSV` | Path to your `Connections.csv` (default `agents/career-ops/data/Connections.csv`). |
 | `HIRING_RADAR_NOTIFY=true` + `HIRING_RADAR_WEBHOOK_URL` | Optional webhook summary. |

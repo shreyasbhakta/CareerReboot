@@ -183,7 +183,7 @@ Every per-user setting is a git-ignored local file next to a committed example t
 | Variable | Purpose |
 |---|---|
 | `BRAVE_SEARCH_API_KEY`, `SEARXNG_URL` | Search backends |
-| `SERPER_API_KEY`, `EXA_API_KEY`, `HUNTER_API_KEY` | Optional extra sources for Search HM |
+| `SERPER_API_KEY`, `SERPAPI_API_KEY`, `EXA_API_KEY`, `HUNTER_API_KEY` | Optional extra sources for Search HM |
 | `MODEL_PROVIDER` (`anthropic`, `openai`, `gemini`, `openrouter`, `omniroute`, `ollama`), `MODEL_NAME`, `MODEL_BASE_URL` | Optional model routing; off unless `MODEL_PROVIDER` is set |
 | `ANTHROPIC_API_KEY`, `OPENAI_API_KEY`, `GEMINI_API_KEY`, `OPENROUTER_API_KEY`, `OMNIROUTE_API_KEY` | Provider keys |
 | `HIRING_RADAR_NOTIFY`, `HIRING_RADAR_WEBHOOK_URL` | Webhook notifications |

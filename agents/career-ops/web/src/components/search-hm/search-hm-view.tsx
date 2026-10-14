@@ -26,6 +26,7 @@ const PROVIDERS: [string, string, string][] = [
   ["BRAVE_SEARCH_API_KEY", "Brave Search", "free tier, web results"],
   ["SEARXNG_URL", "SearXNG", "self-hosted, free"],
   ["SERPER_API_KEY", "Serper", "Google results, 2,500 free queries"],
+  ["SERPAPI_API_KEY", "SerpApi", "Google results, small free plan"],
   ["EXA_API_KEY", "Exa", "people-aware search, best for profiles"],
   ["HUNTER_API_KEY", "Hunter", "company staff directory + emails"],
   ["MODEL_PROVIDER", "Model re-ranking", "a model re-reads the evidence"],

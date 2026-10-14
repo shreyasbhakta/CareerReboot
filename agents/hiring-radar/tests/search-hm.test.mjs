@@ -187,3 +187,20 @@ test('search-hm: Exa Markdown profiles name the profile owner, not a phrase from
   assert.equal(people[0].title, 'Engineering Leader at Paypal');
   assert.equal(exaHeadline('Chris Ryan Applied AI Lead @ Anthropic London, England, United Kingdom (GB) 500 connections • 8,053 followers About I lead', 'Chris Ryan'), 'Applied AI Lead @ Anthropic London');
 });
+
+test('search-hm: SerpApi answers through organic_results, and a spent plan (HTTP 200 + error) hands over to the next provider', async () => {
+  const c = cfg();
+  c.hm_search.max_queries = 2;
+  c.hm_search.providers = ['serpapi', 'brave'];
+  c.hm_search.budgets = { ...c.hm_search.budgets, serpapi: 100 };
+  const serpapi = (body) => async (url) => (url.startsWith('https://serpapi.com/') ? res(body) : fakeFetch([])(url));
+  const organic = { organic_results: HITS.map((h) => ({ link: h.url, title: h.title, snippet: h.description })) };
+  const env = { SERPAPI_API_KEY: 'k', BRAVE_SEARCH_API_KEY: 'b' };
+  const ok = await searchHm({ url: JOB_URL, env, cfg: c, logger: silentLogger, fetchImpl: serpapi(organic), dataDir: mkdtempSync(join(tmpdir(), 'hm-')) });
+  assert.deepEqual(ok.providers.used, ['serpapi']);
+  assert.ok(ok.candidates.some((x) => x.name === 'Jane Park' && x.evidence.some((e) => e.source === 'serpapi')));
+  const spent = await searchHm({ url: JOB_URL, env, cfg: c, logger: silentLogger, fetchImpl: serpapi({ error: 'Your account has run out of searches.' }), dataDir: mkdtempSync(join(tmpdir(), 'hm-')) });
+  assert.deepEqual(spent.providers.exhausted, ['serpapi']);
+  assert.equal(spent.providers.requests.serpapi, 1);
+  assert.deepEqual(spent.providers.used, ['brave']);
+});

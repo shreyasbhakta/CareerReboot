@@ -1,7 +1,7 @@
 # Graph Report - hiring-radar  (2026-10-14)
 
 ## Corpus Check
-- 56 files · ~37,408 words
+- 56 files · ~37,656 words
 - Verdict: corpus is large enough that graph structure adds value.
 - Unclassified: 1 file(s) not represented in the graph (top: .csv 1)
 
@@ -11,7 +11,7 @@
 - Token cost: 0 input · 0 output
 
 ## Graph Freshness
-- Built from commit: `d7e2fb82`
+- Built from commit: `7c37818c`
 - Run `git rev-parse HEAD` and compare to check if the graph is stale.
 - Run `graphify update .` after code changes (no API cost).
 

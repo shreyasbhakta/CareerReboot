@@ -442,6 +442,7 @@ function Settings({ state, refresh }: { state: State; refresh: () => void }) {
       <Card className="space-y-3 p-4">
         <h2 className="text-sm font-semibold">People search <span className="font-normal text-muted">— optional; each one adds evidence to Search HM</span></h2>
         <Field k="SERPER_API_KEY" label="Serper API key" secret placeholder="" help="Google results; serper.dev" {...p} />
+        <Field k="SERPAPI_API_KEY" label="SerpApi API key" secret placeholder="" help="Google results; serpapi.com" {...p} />
         <Field k="EXA_API_KEY" label="Exa API key" secret placeholder="" help="people-aware search; exa.ai" {...p} />
         <Field k="HUNTER_API_KEY" label="Hunter API key" secret placeholder="" help="company staff directory and emails; hunter.io" {...p} />
       </Card>
