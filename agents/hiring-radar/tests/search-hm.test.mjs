@@ -142,3 +142,11 @@ test('search-hm: third live round (company-level fallback, team word only from t
   const ghazy = peopleFromHit({ url: 'https://www.linkedin.com/in/ng', title: 'Nermine Ghazy - Palantir Technologies | LinkedIn', snippet: 'Palantir. Flew Delta to Denver.', provider: 'brave' }, ctx, c);
   assert.ok(!ghazy[0].evidence.includes('team_match'));
 });
+
+test('search-hm: fourth live round (students are not leads)', () => {
+  const c = cfg();
+  const ctx = { ...queryContext({ title: 'Software Engineer', company: 'Palantir', team: '', location: '' }, c), reportsTo: '' };
+  const hit = (title, snippet) => peopleFromHit({ url: 'https://www.linkedin.com/in/w', title, snippet, provider: 'brave' }, ctx, c);
+  assert.deepEqual(hit('Walter Stark - Tech Lead - Palantir | LinkedIn', "I am a master's student in computer science at Cornell."), []);
+  assert.equal(hit('Ana Ruiz - Engineering Manager - Palantir | LinkedIn', 'I mentor students and interns.').length, 1);
+});

@@ -21,6 +21,9 @@ const DEPARTED = /\b(my time at|last day at|moving on from|farewell|said goodbye
 const X_EPOCH = 1288834974657n;
 const BRAND_WORDS = /\b(official|careers?|jobs|hiring|news|updates|team|og|fans?|hq|insider|daily|stock|investors?)\b/i;
 const DAY_MS = 864e5;
+// Students and interns can carry "lead" titles from clubs or internships; they don't own openings.
+const STUDENT = /\b(student|intern|undergrad(uate)?)\b/i;
+const SELF_STUDENT = /\bI(?: am|'m) an? [^.]{0,40}\bstudent\b/i;
 const FORMER = /\b(former(ly)?|ex-|previously|past|alum(nus|na|ni)?|retired)\b/i;
 const HIRING_WORDS = /\b(hiring|we'?re looking|i'?m looking|join (my|our) team|open role|apply|opening|recruiting)\b/i;
 const STOP = new Set(['the', 'and', 'of', 'for', 'a', 'an', 'to', 'in', 'at', 'team', 'senior', 'sr', 'junior', 'jr', 'staff', 'principal', 'lead', 'ii', 'iii', 'iv', 'i']);
@@ -232,7 +235,7 @@ export function peopleFromHit(rawHit, ctx, cfg, now = Date.now()) {
       const bare = String(hit.title || '').split(/\s+[|–-]\s+/)[0].trim();
       if (isPlausibleName(bare)) p = { name: bare, title: String(hit.snippet || '').split(/[.\n|]/)[0].slice(0, 140), company: '' };
     }
-    if (!p || !atCompany || FORMER.test(`${p.title} ${p.company}`)) return out;
+    if (!p || !atCompany || FORMER.test(`${p.title} ${p.company}`) || STUDENT.test(p.title) || SELF_STUDENT.test(hit.snippet)) return out;
     if (p.company && !mentionsCompany(p.company, ctx.company) && !mentionsCompany(p.title, ctx.company)) return out;
     if ([p.company, p.title].some((x) => isOtherCompany(x, ctx.company))) return out;
     // A common team word ("Delta", "Modeling") in a profile's About text is not their team; the headline is.
@@ -381,7 +384,8 @@ export async function researchJob({ job, cfg, env, http, cache, logger }) {
   await run(webQueries, exaQueries);
   // Narrow (team, location) queries can come back empty; widen to company-level leaders before giving up.
   const fb = hm.fallback;
-  if (rankCandidates(people, cfg).length < fb.below_candidates) {
+  // Recruiters alone don't satisfy the search: the manager is the lead that matters.
+  if (rankCandidates(people, cfg).filter((c) => c.role !== 'recruiter').length < fb.below_candidates) {
     const all = ctx.leaders.length;
     await run(expandTemplates(fb.queries, ctx, fb.max_queries, all).filter((q) => !webQueries.includes(q)),
       expandTemplates(fb.exa_queries, ctx, fb.max_queries, all).filter((q) => !exaQueries.includes(q)));

@@ -215,7 +215,7 @@ hm_search:
     - "{leader} {team} at {company}"
     - "recruiter at {company} hiring {function}"
   leaders_per_query: 3
-  # When the queries above find fewer than `below_candidates` leads, these run too,
+  # When the queries above find fewer than `below_candidates` non-recruiter leads, these run too,
   # once per leader title (all of them), to widen from the team to the whole company.
   fallback:
     below_candidates: 5
