@@ -197,6 +197,15 @@ const SNIPPET_PERSON = /\b([A-Z][a-z'’-]+(?:\s+[A-Z][a-z'’.-]+){1,2}),\s+(?:
 const clean = (s) => decodeEntities(decodeEntities(String(s || '')).replace(/<[^>]+>/g, ''))
   .replace(/\[([^\]]*)\]\([^)]*\)/g, '$1').replace(/(^|\s)#{1,6}\s/g, ' ').replace(/\s+/g, ' ').trim();
 
+/** "Jane Doe Head of X @Acme London, England, United Kingdom (GB) 500 connections … About …" -> "Head of X @Acme London". */
+export function exaHeadline(snippet, name) {
+  return String(snippet || '').replace(name, '')
+    .split(/[.\n|]|\s\d[\d,]*\+? (?:connections|followers)\b|\sAbout\s/)[0]
+    // The city can't be told apart from the headline's last words; the region and country after it can.
+    .replace(/(?:,[^,()]*)*\s*\([A-Z]{2}\)\s*$/, '')
+    .trim().slice(0, 140);
+}
+
 export function peopleFromHit(rawHit, ctx, cfg, now = Date.now()) {
   const snippet = clean(rawHit.snippet);
   const hit = { ...rawHit, title: clean(rawHit.title), snippet: BOILERPLATE.test(snippet) ? '' : snippet };
@@ -238,7 +247,7 @@ export function peopleFromHit(rawHit, ctx, cfg, now = Date.now()) {
       const bare = String(hit.title || '').split(/\s+[|–-]\s+/)[0].trim();
       if (isPlausibleName(bare)) p = { name: bare, title: '', company: '' };
     }
-    if (p && !p.title) p = { ...p, title: String(hit.snippet || '').replace(p.name, '').split(/[.\n|]/)[0].trim().slice(0, 140) };
+    if (p && !p.title) p = { ...p, title: exaHeadline(hit.snippet, p.name) };
     if (!p || !atCompany || FORMER.test(`${p.title} ${p.company}`) || STUDENT.test(p.title) || SELF_STUDENT.test(hit.snippet)) return out;
     if (p.company && !mentionsCompany(p.company, ctx.company) && !mentionsCompany(p.title, ctx.company)) return out;
     if ([p.company, p.title].some((x) => isOtherCompany(x, ctx.company))) return out;
