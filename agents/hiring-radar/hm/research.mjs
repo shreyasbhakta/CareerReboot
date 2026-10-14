@@ -235,7 +235,9 @@ export function peopleFromHit(rawHit, ctx, cfg, now = Date.now()) {
     if (!p || !atCompany || FORMER.test(`${p.title} ${p.company}`)) return out;
     if (p.company && !mentionsCompany(p.company, ctx.company) && !mentionsCompany(p.title, ctx.company)) return out;
     if ([p.company, p.title].some((x) => isOtherCompany(x, ctx.company))) return out;
-    push({ name: p.name, title: p.title, profileUrl, evidence: ['profile_at_company', ...titleEvidence(p.title, ctx, cfg), ...contextEvidence(text, ctx)] });
+    // A common team word ("Delta", "Modeling") in a profile's About text is not their team; the headline is.
+    const ev = contextEvidence(text, ctx).filter((e) => e !== 'team_match' || hasAll(p.title, ctx.team));
+    push({ name: p.name, title: p.title, profileUrl, evidence: ['profile_at_company', ...titleEvidence(p.title, ctx, cfg), ...ev] });
     return out;
   }
 
@@ -356,22 +358,35 @@ export async function researchJob({ job, cfg, env, http, cache, logger }) {
   }
 
   const jobs = [];
-  for (const p of used) for (const q of p === 'exa' ? exaQueries : webQueries) jobs.push({ provider: p, query: q });
+  const results = [];
+  const run = async (webQs, exaQs) => {
+    const batch = [];
+    for (const p of used) for (const q of p === 'exa' ? exaQs : webQs) batch.push({ provider: p, query: q });
+    const res = await mapLimit(batch, 4, async ({ provider, query }) => {
+      const key = `hm|${provider}|${query}`;
+      let hits = cache?.get(key);
+      if (!hits) {
+        hits = await engines[provider].search(http, env, query, { days: null, count: hm.results_per_query, category: provider === 'exa' ? 'people' : undefined });
+        if (hits.length) cache?.set(key, hits);
+      }
+      return hits.map((h) => ({ ...h, provider, query }));
+    });
+    res.forEach((r, i) => {
+      if (!r.ok) { errors.push(`${batch[i].provider}: ${String(r.error?.message || r.error).slice(0, 160)}`); return; }
+      for (const hit of r.value) people.push(...peopleFromHit(hit, ctx, cfg));
+    });
+    jobs.push(...batch);
+    results.push(...res);
+  };
+  await run(webQueries, exaQueries);
+  // Narrow (team, location) queries can come back empty; widen to company-level leaders before giving up.
+  const fb = hm.fallback;
+  if (rankCandidates(people, cfg).length < fb.below_candidates) {
+    const all = ctx.leaders.length;
+    await run(expandTemplates(fb.queries, ctx, fb.max_queries, all).filter((q) => !webQueries.includes(q)),
+      expandTemplates(fb.exa_queries, ctx, fb.max_queries, all).filter((q) => !exaQueries.includes(q)));
+  }
   logger.info(`Search HM: ${jobs.length} queries across ${used.join(', ') || 'no search provider'}${hunterOn ? ' + hunter' : ''}`);
-
-  const results = await mapLimit(jobs, 4, async ({ provider, query }) => {
-    const key = `hm|${provider}|${query}`;
-    let hits = cache?.get(key);
-    if (!hits) {
-      hits = await engines[provider].search(http, env, query, { days: null, count: hm.results_per_query, category: provider === 'exa' ? 'people' : undefined });
-      if (hits.length) cache?.set(key, hits);
-    }
-    return hits.map((h) => ({ ...h, provider, query }));
-  });
-  results.forEach((r, i) => {
-    if (!r.ok) { errors.push(`${jobs[i].provider}: ${String(r.error?.message || r.error).slice(0, 160)}`); return; }
-    for (const hit of r.value) people.push(...peopleFromHit(hit, ctx, cfg));
-  });
 
   if (hunterOn) {
     try { people.push(...await hunterPeople({ http, env, job, ctx, cfg })); } catch (e) { errors.push(`hunter: ${e.message.slice(0, 160)}`); }

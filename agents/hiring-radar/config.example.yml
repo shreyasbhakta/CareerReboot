@@ -215,6 +215,20 @@ hm_search:
     - "{leader} {team} at {company}"
     - "recruiter at {company} hiring {function}"
   leaders_per_query: 3
+  # When the queries above find fewer than `below_candidates` leads, these run too,
+  # once per leader title (all of them), to widen from the team to the whole company.
+  fallback:
+    below_candidates: 5
+    max_queries: 12
+    queries:
+      - 'site:linkedin.com/in "{company}" "{leader}"'
+      - 'site:linkedin.com/in "{company}" (director OR head OR "vp" OR manager) {function}'
+      - 'site:linkedin.com/in "{company}" ("talent partner" OR recruiter OR "talent acquisition")'
+      - 'site:linkedin.com/posts "{company}" hiring'
+      - '"{company}" (founder OR "head of" OR director) {function} team'
+    exa_queries:
+      - "{leader} at {company}"
+      - "talent partner at {company}"
   # Function of the job, picked from its title; decides which leader titles to look for.
   # First function whose `match` term is in the title wins; `default` otherwise.
   # hunter_department is Hunter's department filter for the staff-directory lookup.
@@ -223,7 +237,7 @@ hm_search:
       label: engineering
       hunter_department: it
       match: ["engineer", "developer", "software", "member of technical staff", "technical staff", "mts", "backend", "frontend", "full stack", "fullstack", "sre", "devops", "platform", "infrastructure", "mobile", "ios", "android", "qa", "security", "architect", "firmware"]
-      leaders: ["engineering manager", "director of engineering", "head of engineering", "vp of engineering", "senior engineering manager", "tech lead"]
+      leaders: ["engineering manager", "director of engineering", "head of engineering", "vp of engineering", "senior engineering manager", "tech lead", "manager of technical staff"]
     - id: data
       label: data
       hunter_department: it

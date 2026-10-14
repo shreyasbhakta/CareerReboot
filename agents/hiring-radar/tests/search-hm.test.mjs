@@ -120,3 +120,25 @@ test('search-hm: second live round (dates from ids, boilerplate, education, depa
   assert.ok(!sneha[0].evidence.includes('location_match'));
   assert.ok(isOtherCompany('Cohere Technology Group', 'Cohere'));
 });
+
+test('search-hm: third live round (company-level fallback, team word only from the headline)', async () => {
+  const c = cfg();
+  c.hm_search.max_queries = 2;
+  const queries = [];
+  const fetchImpl = async (url) => {
+    if (url.startsWith('https://boards-api.greenhouse.io/')) return res(GH);
+    if (url.startsWith('https://api.search.brave.com/')) {
+      const q = new URL(url).searchParams.get('q');
+      queries.push(q);
+      return res({ web: { results: q.includes('"tech lead"') ? [HITS[0]] : [] } });
+    }
+    return res('', false);
+  };
+  const r = await searchHm({ url: JOB_URL, env: { BRAVE_SEARCH_API_KEY: 'k' }, cfg: c, logger: silentLogger, fetchImpl, dataDir: mkdtempSync(join(tmpdir(), 'hm-')) });
+  assert.ok(queries.length > 2 && queries.includes('site:linkedin.com/in "Acme" "tech lead"'), 'few leads widen to every leader title');
+  assert.ok(r.candidates.some((x) => x.name === 'Jane Park'));
+
+  const ctx = { ...queryContext({ title: 'Deployment Strategist', company: 'Palantir', team: 'Delta', location: '' }, c), reportsTo: '' };
+  const ghazy = peopleFromHit({ url: 'https://www.linkedin.com/in/ng', title: 'Nermine Ghazy - Palantir Technologies | LinkedIn', snippet: 'Palantir. Flew Delta to Denver.', provider: 'brave' }, ctx, c);
+  assert.ok(!ghazy[0].evidence.includes('team_match'));
+});
