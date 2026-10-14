@@ -17,7 +17,7 @@ export const radarInstalled = () => fs.existsSync(radarScript("scan.mjs")) && fs
 
 // ---- .env (secrets live here, never in config.yml, never returned to the browser) ----
 export const ENV_KEYS = [
-  "SEARXNG_URL", "BRAVE_SEARCH_API_KEY",
+  "SEARXNG_URL", "BRAVE_SEARCH_API_KEY", "SERPER_API_KEY", "EXA_API_KEY", "HUNTER_API_KEY",
   "MODEL_PROVIDER", "MODEL_NAME", "MODEL_BASE_URL",
   "OPENAI_API_KEY", "ANTHROPIC_API_KEY", "GEMINI_API_KEY", "OPENROUTER_API_KEY", "OMNIROUTE_API_KEY",
   "HIRING_RADAR_NOTIFY", "HIRING_RADAR_WEBHOOK_URL",

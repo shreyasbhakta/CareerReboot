@@ -180,6 +180,97 @@ enrichment:
   lookup_people: true           # unverified SearXNG people search for top jobs without a person
   max_people_lookups: 8
 
+# ---- Search HM (who is behind one job posting) -------------------------------
+# Used by search-hm.mjs and the dashboard's "Search HM" page. Every candidate is
+# a lead with evidence, never a confirmed hiring manager.
+hm_search:
+  # All configured providers are queried; each one adds independent evidence.
+  # searxng -> SEARXNG_URL · brave -> BRAVE_SEARCH_API_KEY · serper -> SERPER_API_KEY (Google results)
+  # exa -> EXA_API_KEY (people-aware search) · hunter -> HUNTER_API_KEY (company staff directory)
+  providers: [brave, serper, searxng, exa, hunter]
+  max_queries: 12               # per search provider; each query is one API request
+  results_per_query: 10
+  hunter_limit: 10
+  hunter_extra_departments: [hr]   # also list recruiters / HR at the company
+  max_candidates: 15
+  cache_hours: 72
+  # {company} {title} {team} {leader} {location} {function} are filled from the posting.
+  # A template whose placeholders are empty for this posting is skipped; {leader}
+  # templates run once per leader title (best first).
+  queries:
+    - '"{company}" "{title}" hiring'
+    - 'site:linkedin.com/posts "{company}" "{title}"'
+    - 'site:linkedin.com/in "{company}" "{leader}"'
+    - 'site:linkedin.com/in "{company}" "{leader}" "{team}"'
+    - 'site:linkedin.com/in "{company}" (recruiter OR "talent acquisition") {function}'
+    - 'site:linkedin.com/posts "{company}" hiring {function}'
+    - '(site:x.com OR site:twitter.com) "{company}" hiring "{title}"'
+    - '"{company}" "{team}" team "{leader}"'
+    - 'site:linkedin.com/in "{company}" "{leader}" "{location}"'
+  # Exa understands plain-language people queries (category: people).
+  exa_queries:
+    - "{leader} at {company}"
+    - "{leader} {team} at {company}"
+    - "recruiter at {company} hiring {function}"
+  leaders_per_query: 3
+  # Function of the job, picked from its title; decides which leader titles to look for.
+  # First function whose `match` term is in the title wins; `default` otherwise.
+  # hunter_department is Hunter's department filter for the staff-directory lookup.
+  functions:
+    - id: engineering
+      label: engineering
+      hunter_department: it
+      match: ["engineer", "developer", "software", "backend", "frontend", "full stack", "fullstack", "sre", "devops", "platform", "infrastructure", "mobile", "ios", "android", "qa", "security", "architect", "firmware"]
+      leaders: ["engineering manager", "director of engineering", "head of engineering", "vp of engineering", "senior engineering manager", "tech lead"]
+    - id: data
+      label: data
+      hunter_department: it
+      match: ["data", "machine learning", "ml ", "ai ", "analytics", "scientist", "research"]
+      leaders: ["data science manager", "head of data", "director of data", "machine learning manager", "head of ai", "director of machine learning"]
+    - id: product
+      label: product
+      hunter_department: management
+      match: ["product manager", "product owner", "program manager"]
+      leaders: ["director of product", "head of product", "group product manager", "vp of product"]
+    - id: design
+      label: design
+      hunter_department: design
+      match: ["designer", "ux", "ui ", "design"]
+      leaders: ["design manager", "head of design", "director of design"]
+    - id: sales
+      label: sales
+      hunter_department: sales
+      match: ["account executive", "sales", "business development", "account manager", "solutions engineer", "customer success"]
+      leaders: ["sales manager", "head of sales", "director of sales", "vp of sales"]
+    - id: marketing
+      label: marketing
+      hunter_department: marketing
+      match: ["marketing", "growth", "content", "brand", "communications"]
+      leaders: ["marketing manager", "head of marketing", "director of marketing", "vp of marketing"]
+    - id: operations
+      label: operations
+      hunter_department: operations
+      match: ["operations", "finance", "accountant", "legal", "people", "hr ", "recruit"]
+      leaders: ["operations manager", "head of operations", "director of operations"]
+  default_function: { id: general, label: "", leaders: ["hiring manager", "head of", "director"] }
+  # Points per piece of evidence; a candidate's score is the capped sum (0-100).
+  evidence_points:
+    named_in_posting: 60        # the posting itself names them (contact line, ATS "posted by")
+    posted_this_job: 50         # their own post mentions this job title at this company
+    hiring_post: 25             # their own post says the company is hiring (title not matched)
+    leader_title: 25            # their title is a leader title for this job's function
+    reports_to_title: 20        # their title matches the posting's "reports to" line
+    team_match: 15              # their title or snippet names the job's team
+    recruiter_title: 15
+    profile_at_company: 10      # a public profile/page ties them to the company
+    location_match: 8
+    staff_directory: 10         # listed by Hunter at the company's domain
+    extra_source: 6             # each additional independent source (up to 3)
+  min_points: 20                # below this a person is noise, not a lead
+  confidence: { high: 75, medium: 45 }
+  llm_rerank: true              # when a model provider is configured, a model re-reads the evidence
+  llm_weight: 0.4               # final = rules * (1 - w) + model * w
+
 # ---- Model routing -----------------------------------------------------------
 # LLM is only used for ambiguous hiring classification and short "why this
 # matches" explanations on top results. Everything works with it disabled.

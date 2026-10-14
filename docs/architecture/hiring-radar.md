@@ -97,7 +97,7 @@ overall = 0.35·technical + 0.25·activity + 0.15·direct_language
 ## 5. Where an LLM is (and is not) used
 
 Never for: URL normalization, dedup, dates, phrase matching, scoring, filtering, extraction from structured data.
-Only for: (1) classifying posts whose deterministic direct-language score falls in 40–75 (not job postings, not HN), and (2) a short *why / outreach angle* for the top N. Both are timeout- and retry-protected, JSON-validated, cached 14 days on disk, capped at `llm.max_calls`, and send only truncated post text plus a profile summary of roles and skills — **no email, phone, address or resume**.
+Only for: (1) classifying posts whose deterministic direct-language score falls in 40–75 (not job postings, not HN), (2) a short *why / outreach angle* for the top N, and (3) Search HM's re-ranking of leads it already found (it can reorder and explain, never add a person). Both are timeout- and retry-protected, JSON-validated, cached 14 days on disk, capped at `llm.max_calls`, and send only truncated post text plus a profile summary of roles and skills — **no email, phone, address or resume**.
 
 It is **opt-in**: nothing is called unless `MODEL_PROVIDER` is set. With it unset (or every provider failing) the scan runs identically, using deterministic "why" and outreach text built from `profile.yml` proof points.
 
@@ -115,6 +115,7 @@ The configured provider is tried first, then the remaining `llm.providers` that 
 | `hiring-signals.json` | Normalized signals + full score breakdown for the dashboard. Written atomically. |
 | `hiring-radar.md` | The digest. |
 | `cache/` | Search-response cache and LLM cache. |
+| `search-hm.json` | The last 30 Search HM results (job, ranked leads with evidence, dig-deeper links). |
 
 All are gitignored by career-ops' `data/*` rule. `HIRING_RADAR_DATA_DIR` redirects them (used by CI and tests).
 
@@ -165,6 +166,10 @@ Reused from career-ops (not duplicated): `lib/cli-flags`, `lib/is-main-module`, 
 ## 10b. Dashboard page
 
 `/hiring-radar` in the career-ops web app (nav entry + banner on the home page). It is a thin shell: `src/lib/hiring-radar.ts` and `src/app/api/hiring-radar/*` resolve paths, edit the gitignored `.env` / `config.yml` / one marked crontab block, supervise a single `scan.mjs` child process and read `hiring-signals.json`. Config saves are validated by `scan.mjs --check-config <file>`; status changes go through `set-status.mjs`. It inherits the app's existing origin guard and optional password gate. Cron writes use the *user* crontab only and touch nothing outside the `careerreboot-hiring-radar` markers; on macOS the system may ask for permission the first time (the request times out after 20 s with a message rather than hanging).
+
+## 10c. Search HM
+
+`search-hm.mjs` + `hm/job.mjs` + `hm/research.mjs`, shown at `/search-hm`. One job URL in, ranked leads out. The posting is read from its ATS API (Greenhouse, Lever, Ashby, Workday, SmartRecruiters, Greenhouse embeds via `gh_jid`), its schema.org JobPosting and page meta; LinkedIn URLs are parsed for title and company but never fetched. Queries are filled from `hm_search.queries` templates (company, title, team, function leader titles, "reports to" title, location) and sent to every configured provider (`searxng`, `brave`, `serper`, `exa` with its `people` category) plus Hunter's domain search. Each hit is read with the same person extractors as the radar; people are kept only when the hit ties them to the company, former employees are dropped, and scores are the sum of `hm_search.evidence_points`. Searches are cached for `cache_hours`.
 
 ## 11. Limitations (honest)
 
