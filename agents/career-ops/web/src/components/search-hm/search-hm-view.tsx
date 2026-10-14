@@ -8,7 +8,7 @@ import { Badge } from "@/components/ui/badge";
 import { Card } from "@/components/ui/card";
 import { cn } from "@/lib/cn";
 
-type Evidence = { type: string; label: string; source: string; url: string; quote: string };
+type Evidence = { types: string[]; labels: string[]; source: string; url: string; quote: string };
 type Candidate = {
   id: string; name: string; title: string; profileUrl: string | null; email: string | null; role: string; score: number; ruleScore: number;
   confidence: "high" | "medium" | "low"; evidence: Evidence[]; sourceCount: number; model?: { likelihood: number; role: string | null; reason: string };
@@ -190,7 +190,7 @@ function CandidateCard({ c, rank }: { c: Candidate; rank: number }) {
           <ul className="mt-2 space-y-1">
             {c.evidence.slice(0, 5).map((e, i) => (
               <li key={i} className="text-xs">
-                <span className="text-foreground">{e.label}</span>
+                <span className="text-foreground">{e.labels.join(" · ")}</span>
                 <span className="text-faint"> · {e.source} · </span>
                 <a href={e.url} target="_blank" rel="noreferrer" className="text-brand hover:underline">source</a>
                 {e.quote && <span className="block truncate text-faint">“{e.quote}”</span>}

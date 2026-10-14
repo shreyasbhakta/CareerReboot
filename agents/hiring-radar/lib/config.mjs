@@ -138,6 +138,7 @@ export function validateConfig(c) {
     for (const f of hm.functions || []) need(Array.isArray(f?.match) && f.match.length > 0, `hm_search.functions[${f?.id}].match must be a non-empty list`);
     need(isObj(hm.evidence_points) && Object.values(hm.evidence_points).every((v) => typeof v === 'number' && v >= 0), 'hm_search.evidence_points must map evidence to numbers >= 0');
     need(hm.llm_weight >= 0 && hm.llm_weight <= 1, 'hm_search.llm_weight must be 0-1');
+    need(Number.isInteger(hm.post_max_age_days) && hm.post_max_age_days >= 1, 'hm_search.post_max_age_days must be a positive integer');
   }
   return errs;
 }

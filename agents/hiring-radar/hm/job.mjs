@@ -69,6 +69,11 @@ export function parseJobPostingLd(html) {
   };
 }
 
+/** "0020 PayPal, Inc." (Workday legal entity) -> "PayPal". */
+export function cleanCompany(name) {
+  return String(name || '').replace(/^\d+\s+/, '').replace(/,?\s+(inc|llc|l\.?l\.?c|ltd|corp|corporation|co|plc|pbc|gmbh|l\.?p)\.?$/i, '').trim();
+}
+
 const escapeRe = (s) => s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
 
 /** Drop the " at Acme | Careers" tails page titles carry. */
@@ -218,6 +223,7 @@ export async function fetchJob({ url, http, overrides = {} }) {
   }
 
   for (const k of ['company', 'title', 'location', 'team']) if (str(overrides[k])) job[k] = str(overrides[k]);
+  job.company = cleanCompany(job.company);
   if (str(overrides.text)) { job.text = compactText(overrides.text, TEXT_CAP); job.sources.push('pasted description'); }
 
   job.title = cleanTitle(job.title, job.company);

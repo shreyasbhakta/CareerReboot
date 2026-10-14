@@ -5,11 +5,16 @@
 import { engines } from '../collectors/web-search.mjs';
 import { mapLimit } from '../lib/http.mjs';
 import { normalizeText } from '../lib/text.mjs';
+import { decodeEntities } from '../../career-ops/providers/_html-entities.mjs';
 import {
   isPlausibleName, cleanLinkedInProfileUrl, parseProfileTitle, parsePostAuthor, extractNamedContact,
 } from '../extractors/person.mjs';
 
-const COMPANY_SUFFIX = /\b(inc|incorporated|llc|ltd|limited|corp|corporation|co|company|plc|gmbh|sa|ag|technologies|technology|labs|hq)\b/g;
+const COMPANY_SUFFIX = /\b(inc|incorporated|llc|ltd|limited|corp|corporation|co|company|plc|pbc|gmbh|sa|ag|technologies|technology|labs|hq)\b/g;
+// Words that can follow a company name without making it a different company ("Cohere AI", "Acme Group").
+const SAME_COMPANY_TAIL = new Set(['ai', 'group', 'holdings', 'global', 'us', 'usa', 'na', 'team', 'careers', 'jobs']);
+const BRAND_WORDS = /\b(official|careers?|jobs|hiring|news|updates|team|og|fans?|hq|insider|daily|stock|investors?)\b/i;
+const DAY_MS = 864e5;
 const FORMER = /\b(former(ly)?|ex-|previously|past|alum(nus|na|ni)?|retired)\b/i;
 const HIRING_WORDS = /\b(hiring|we'?re looking|i'?m looking|join (my|our) team|open role|apply|opening|recruiting)\b/i;
 const STOP = new Set(['the', 'and', 'of', 'for', 'a', 'an', 'to', 'in', 'at', 'team', 'senior', 'sr', 'junior', 'jr', 'staff', 'principal', 'lead', 'ii', 'iii', 'iv', 'i']);
@@ -28,9 +33,53 @@ export function mentionsCompany(text, company) {
   return ` ${t} `.includes(` ${key} `) || (key.includes(' ') && t.replace(/\s/g, '').includes(key.replace(/\s/g, '')));
 }
 
-export function pickFunction(title, hm) {
+/** Function by title; when the title says nothing ("Member of Technical Staff"), the description's most frequent function terms decide. */
+export function pickFunction(title, hm, text = '') {
+  const hit = (s, m) => s.includes(` ${normalizeText(m)}`);
   const t = ` ${normalizeText(title)} `;
-  return hm.functions.find((f) => f.match.some((m) => t.includes(` ${normalizeText(m)}`))) || hm.default_function;
+  const byTitle = hm.functions.find((f) => f.match.some((m) => hit(t, m)));
+  if (byTitle) return byTitle;
+  const body = ` ${normalizeText(text).slice(0, 6000)} `;
+  const count = (f) => f.match.reduce((n, m) => n + (body.split(` ${normalizeText(m)}`).length - 1), 0);
+  const best = hm.functions.map((f) => [f, count(f)]).sort((a, b) => b[1] - a[1])[0];
+  return best && best[1] >= 3 ? best[0] : hm.default_function;
+}
+
+/** Employer named in a profile slot ("Title - Employer", "at Employer", "Experience: Employer"). */
+export function employerPhrases(text) {
+  const t = String(text || '');
+  const out = [];
+  for (const m of t.matchAll(/(?:\bat|@|Experience:)\s+([A-Z0-9][\w&.'’-]*(?:\s+[A-Z0-9&][\w&.'’-]*){0,3})/g)) out.push(m[1].split(/[.,;]\s/)[0]);
+  return out;
+}
+
+/** "Cohere Health" when looking for "Cohere": same first words, more words that are not a legal suffix. */
+export function isOtherCompany(phrase, company) {
+  const key = companyKey(company);
+  const p = companyKey(phrase);
+  if (!key || !p.startsWith(`${key} `)) return false;
+  return p.slice(key.length + 1).split(' ').some((w) => !SAME_COMPANY_TAIL.has(w));
+}
+
+/** The hit names a different employer that only shares the company's first word(s). */
+function namesOtherCompany(phrases, company) {
+  const relevant = phrases.filter((x) => mentionsCompany(x, company) || isOtherCompany(x, company));
+  return relevant.length > 0 && relevant.every((x) => isOtherCompany(x, company));
+}
+
+/** Brand / fan accounts ("Palantir OG", "Acme Careers") are not people. */
+export function looksLikeBrand(name, company) {
+  return mentionsCompany(name, company) || BRAND_WORDS.test(name);
+}
+
+/** ISO date or "3 months ago" -> ms epoch, else null. */
+export function hitTime(date, now = Date.now()) {
+  if (!date) return null;
+  const t = Date.parse(date);
+  if (!Number.isNaN(t)) return t;
+  const m = String(date).match(/(\d+)\s+(hour|day|week|month|year)s?\s+ago/i);
+  const unit = { hour: 1 / 24, day: 1, week: 7, month: 30, year: 365 };
+  return m ? now - Number(m[1]) * unit[m[2].toLowerCase()] * DAY_MS : null;
 }
 
 /** "Senior Software Engineer, Payments (Remote)" -> {core: "Senior Software Engineer", suffix: "Payments"}. */
@@ -44,7 +93,7 @@ export function splitTitle(title) {
 export function queryContext(job, cfg) {
   const hm = cfg.hm_search;
   const { core, suffix } = splitTitle(job.title);
-  const fn = pickFunction(job.title, hm);
+  const fn = pickFunction(job.title, hm, job.text);
   const team = job.team || (suffix && !/remote|hybrid|onsite|\d/i.test(suffix) ? suffix : '');
   const leaders = [job.reportsTo, ...fn.leaders].filter((v, i, a) => v && a.findIndex((x) => normalizeText(x) === normalizeText(v)) === i);
   return {
@@ -80,10 +129,11 @@ export function expandTemplates(templates, ctx, max, leadersPerQuery) {
 function titleEvidence(personTitle, ctx, cfg) {
   const ev = [];
   if (!personTitle) return ev;
+  const t = normalizeText(personTitle);
+  // A talent director is a recruiter, not the team's manager.
+  if (cfg.scoring.recruiter_titles.some((r) => t.includes(normalizeText(r)))) return ['recruiter_title'];
   if (ctx.leaders.slice(1).some((l) => hasAll(personTitle, l))) ev.push('leader_title');
   if (ctx.leaders[0] && hasAll(personTitle, ctx.leaders[0])) ev.push(ctx.leaders[0] === ctx.reportsTo ? 'reports_to_title' : 'leader_title');
-  const t = normalizeText(personTitle);
-  if (cfg.scoring.recruiter_titles.some((r) => t.includes(normalizeText(r)))) ev.push('recruiter_title');
   return ev;
 }
 
@@ -116,13 +166,21 @@ const SNIPPET_PERSON = /\b([A-Z][a-z'’-]+(?:\s+[A-Z][a-z'’.-]+){1,2}),\s+(?:
  * One search hit -> zero or more {name, title, profileUrl, evidence[], quote}.
  * @param {{url, title, snippet, provider, query}} hit
  */
-export function peopleFromHit(hit, ctx, cfg) {
-  const text = `${hit.title || ''}\n${hit.snippet || ''}`;
+const clean = (s) => decodeEntities(decodeEntities(String(s || '')).replace(/<[^>]+>/g, '')).replace(/\s+/g, ' ').trim();
+
+export function peopleFromHit(rawHit, ctx, cfg, now = Date.now()) {
+  const hit = { ...rawHit, title: clean(rawHit.title), snippet: clean(rawHit.snippet) };
+  const text = `${hit.title}\n${hit.snippet}`;
+  if (namesOtherCompany(employerPhrases(text), ctx.company)) return [];
   const atCompany = mentionsCompany(text, ctx.company);
+  const at = hitTime(hit.date, now);
+  const dated = at ? `[${new Date(at).toISOString().slice(0, 10)}] ` : '';
   const isLinkedIn = /linkedin\.com/i.test(hit.url);
   const isPost = /linkedin\.com\/(posts|feed\/update|pulse)\/|(x|twitter)\.com\/[^/]+\/status\//i.test(hit.url);
   const out = [];
-  const push = (p) => { if (p.name && isPlausibleName(p.name)) out.push({ ...p, source: hit.provider, url: hit.url, quote: (hit.snippet || hit.title || '').slice(0, 240), query: hit.query }); };
+  const push = (p) => {
+    if (p.name && isPlausibleName(p.name) && !looksLikeBrand(p.name, ctx.company)) out.push({ ...p, source: hit.provider, url: hit.url, quote: `${dated}${hit.snippet || hit.title}`.slice(0, 240), query: hit.query });
+  };
 
   const named = extractNamedContact(text);
   if (named && atCompany) push({ name: named.name, title: named.title, evidence: ['named_in_posting', 'profile_at_company', ...titleEvidence(named.title, ctx, cfg)] });
@@ -133,7 +191,9 @@ export function peopleFromHit(hit, ctx, cfg) {
     const aboutJob = hasAll(text, ctx.title);
     const hiring = HIRING_WORDS.test(text);
     if (!atCompany && !aboutJob) return out;
-    const ev = aboutJob && (atCompany || hiring) ? ['posted_this_job'] : hiring ? ['hiring_post'] : [];
+    // An old post with the same title is usually an earlier opening, not this one.
+    const recent = at === null || now - at <= cfg.hm_search.post_max_age_days * DAY_MS;
+    const ev = aboutJob && recent && (atCompany || hiring) ? ['posted_this_job'] : hiring && atCompany ? ['hiring_post'] : [];
     if (!ev.length) return out;
     push({ name, title: '', profileUrl: postProfileUrl(hit.url), evidence: [...ev, ...(atCompany ? ['profile_at_company'] : []), ...contextEvidence(text, ctx)] });
     return out;
@@ -149,6 +209,7 @@ export function peopleFromHit(hit, ctx, cfg) {
     }
     if (!p || !atCompany || FORMER.test(`${p.title} ${p.company}`)) return out;
     if (p.company && !mentionsCompany(p.company, ctx.company) && !mentionsCompany(p.title, ctx.company)) return out;
+    if ([p.company, p.title].some((x) => isOtherCompany(x, ctx.company))) return out;
     push({ name: p.name, title: p.title, profileUrl, evidence: ['profile_at_company', ...titleEvidence(p.title, ctx, cfg), ...contextEvidence(text, ctx)] });
     return out;
   }
@@ -188,25 +249,26 @@ export function rankCandidates(people, cfg) {
     if (p.email) c.email = p.email;
     c.keys.add(personKey(p));
     c.sources.add(`${p.source}|${p.url}`);
-    for (const type of p.evidence) {
-      if (!c.evidence.some((e) => e.type === type && e.url === p.url)) c.evidence.push({ type, label: EVIDENCE_LABEL[type] || type, source: p.source, url: p.url, quote: p.quote });
-    }
+    // One evidence row per source, listing everything that source showed.
+    let row = c.evidence.find((e) => e.url === p.url);
+    if (!row) { row = { url: p.url, source: p.source, quote: p.quote, types: [], labels: [] }; c.evidence.push(row); }
+    for (const type of p.evidence) if (!row.types.includes(type)) { row.types.push(type); row.labels.push(EVIDENCE_LABEL[type] || type); }
     byName.set(k, c);
   }
   const pts = hm.evidence_points;
   const out = [];
   for (const c of byName.values()) {
-    const types = new Set(c.evidence.map((e) => e.type));
+    const types = new Set(c.evidence.flatMap((e) => e.types));
     let score = [...types].reduce((s, t) => s + (pts[t] || 0), 0);
     score += Math.min(3, Math.max(0, new Set([...c.sources].map((s) => s.split('|')[1])).size - 1)) * pts.extra_source;
     score = Math.min(100, score);
     if (score < hm.min_points) continue;
-    const role = types.has('leader_title') || types.has('reports_to_title') ? 'hiring_manager'
-      : types.has('recruiter_title') ? 'recruiter'
+    const role = types.has('recruiter_title') ? 'recruiter'
+      : types.has('leader_title') || types.has('reports_to_title') ? 'hiring_manager'
         : types.has('posted_this_job') || types.has('named_in_posting') || types.has('hiring_post') ? 'poster' : 'team';
     const confidence = score >= hm.confidence.high ? 'high' : score >= hm.confidence.medium ? 'medium' : 'low';
-    // Strongest evidence first, one line per distinct (type, url).
-    c.evidence.sort((a, b) => (pts[b.type] || 0) - (pts[a.type] || 0));
+    const weight = (e) => e.types.reduce((n, t) => n + (pts[t] || 0), 0);
+    c.evidence.sort((a, b) => weight(b) - weight(a));
     out.push({ name: c.name, title: c.title, profileUrl: c.profileUrl, email: c.email || null, role, score, ruleScore: score, confidence, evidence: c.evidence, sourceCount: c.sources.size });
   }
   out.sort((a, b) => b.score - a.score || b.sourceCount - a.sourceCount);

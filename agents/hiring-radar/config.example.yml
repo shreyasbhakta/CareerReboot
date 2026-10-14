@@ -220,7 +220,7 @@ hm_search:
     - id: engineering
       label: engineering
       hunter_department: it
-      match: ["engineer", "developer", "software", "backend", "frontend", "full stack", "fullstack", "sre", "devops", "platform", "infrastructure", "mobile", "ios", "android", "qa", "security", "architect", "firmware"]
+      match: ["engineer", "developer", "software", "member of technical staff", "technical staff", "mts", "backend", "frontend", "full stack", "fullstack", "sre", "devops", "platform", "infrastructure", "mobile", "ios", "android", "qa", "security", "architect", "firmware"]
       leaders: ["engineering manager", "director of engineering", "head of engineering", "vp of engineering", "senior engineering manager", "tech lead"]
     - id: data
       label: data
@@ -252,7 +252,8 @@ hm_search:
       hunter_department: operations
       match: ["operations", "finance", "accountant", "legal", "people", "hr ", "recruit"]
       leaders: ["operations manager", "head of operations", "director of operations"]
-  default_function: { id: general, label: "", leaders: ["hiring manager", "head of", "director"] }
+  default_function: { id: general, label: "", leaders: ["hiring manager"] }
+  post_max_age_days: 180        # a post older than this about the same title is treated as an earlier opening
   # Points per piece of evidence; a candidate's score is the capped sum (0-100).
   evidence_points:
     named_in_posting: 60        # the posting itself names them (contact line, ATS "posted by")

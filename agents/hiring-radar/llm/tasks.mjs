@@ -41,13 +41,13 @@ export async function explainMatch(llm, cfg, signal) {
   return res.ok ? res.data : null;
 }
 
-const SYSTEM_RANK_HM = 'You judge who most likely is the hiring manager or poster for one job, using ONLY the evidence given (public search results). Reply with ONLY JSON: {"ranking": [{"id": string, "likelihood": number 0-100, "role": "hiring_manager"|"recruiter"|"poster"|"team"|"unlikely", "reason": string<=140 chars}]}. Include every id given, never add people. Prefer a manager of the job\'s own team and function at the right level; a recruiter is likely the poster, not the hiring manager; executives far above the role and people at other companies are unlikely.';
+const SYSTEM_RANK_HM = 'You judge who most likely is the hiring manager or poster for one job, using ONLY the evidence given (public search results). Reply with ONLY JSON: {"ranking": [{"id": string, "likelihood": number 0-100, "role": "hiring_manager"|"recruiter"|"poster"|"team"|"unlikely", "reason": string<=140 chars}]}. Include every id given, never add people. Prefer a manager of the job\'s own team and function at the right level; a recruiter is likely the poster, not the hiring manager; executives far above the role, people in an unrelated function, people at a different company with a similar name, and evidence about an older or different opening are unlikely. Dates in [brackets] are when the source was published.';
 
 /** Model re-read of the rule-based leads. Returns {id -> {likelihood, role, reason}} or null. */
 export async function rankHiringCandidates(llm, job, candidates) {
   if (!candidates.length) return null;
   const ids = new Set(candidates.map((c) => c.id));
-  const lines = candidates.map((c) => `${c.id}: ${c.name} | ${c.title || 'title unknown'} | evidence: ${c.evidence.slice(0, 4).map((e) => `${e.label} ("${truncate(e.quote, 140)}")`).join('; ')}`);
+  const lines = candidates.map((c) => `${c.id}: ${c.name} | ${c.title || 'title unknown'} | evidence: ${c.evidence.slice(0, 4).map((e) => `${e.labels.join(', ')} ("${truncate(e.quote, 140)}")`).join('; ')}`);
   const res = await llm.complete({
     task: 'rank-hm',
     maxTokens: 1500,
