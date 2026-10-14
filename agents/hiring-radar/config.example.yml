@@ -184,11 +184,22 @@ enrichment:
 # Used by search-hm.mjs and the dashboard's "Search HM" page. Every candidate is
 # a lead with evidence, never a confirmed hiring manager.
 hm_search:
-  # All configured providers are queried; each one adds independent evidence.
   # searxng -> SEARXNG_URL · brave -> BRAVE_SEARCH_API_KEY · serper -> SERPER_API_KEY (Google results)
   # exa -> EXA_API_KEY (people-aware search) · hunter -> HUNTER_API_KEY (company staff directory)
-  providers: [brave, serper, searxng, exa, hunter]
-  max_queries: 16               # per search provider; each query is one API request
+  # The list order is the failover order for web queries: each query goes to the first provider with
+  # budget left; an empty answer or an error moves it to the next. Exa and Hunter answer their own
+  # lookups. A provider that is rate-limited (429) is dropped for the rest of the search; one with a
+  # bad key or spent credits (401/402/403 or a quota message) is skipped for `exhausted_hours`.
+  providers: [serper, brave, searxng, exa, hunter]
+  providers_per_query: 1        # raise to cross-check every query on more providers (more evidence, more credits)
+  budgets:                      # most requests one search may spend per provider
+    serper: 40
+    brave: 40
+    searxng: 80
+    exa: 10
+    hunter: 2
+  exhausted_hours: 24
+  max_queries: 16
   results_per_query: 10
   hunter_limit: 10
   hunter_extra_departments: [hr]   # also list recruiters / HR at the company

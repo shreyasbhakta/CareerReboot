@@ -309,13 +309,70 @@ export function rankCandidates(people, cfg) {
 
 export function hostOf(url) { try { return new URL(url).hostname.replace(/^www\./, ''); } catch { return ''; } }
 
-async function hunterPeople({ http, env, job, ctx, cfg }) {
+// Bad key / out of credits: skip the provider until the limit can have reset, not just for this search.
+const OUT_OF_CREDIT = /\b(quota|credits?|usage limit|plan limit|exceeded your|payment required|insufficient)\b/i;
+
+/** Per-search request budgets plus keys that hit a limit (remembered across searches in the cache). */
+export function createProviderPool(names, hm, cache, now = Date.now()) {
+  const left = Object.fromEntries(names.map((p) => [p, hm.budgets[p] ?? 0]));
+  const exhausted = new Set(names.filter((p) => { const at = cache?.get(`hm|exhausted|${p}`); return at && now - at < hm.exhausted_hours * 36e5; }));
+  const requests = {};
+  const ok = {};
+  return {
+    available: (p) => !exhausted.has(p) && left[p] > 0,
+    take(p) { left[p]--; requests[p] = (requests[p] || 0) + 1; },
+    answered(p) { ok[p] = (ok[p] || 0) + 1; },
+    /** A 429 that survived the HTTP retries ends this search for the provider; a bad key or spent credits end it for `exhausted_hours`. */
+    fail(p, e) {
+      const persistent = [401, 402, 403].includes(e?.status) || OUT_OF_CREDIT.test(e?.message || '');
+      if (persistent || e?.status === 429) exhausted.add(p);
+      if (persistent) cache?.set(`hm|exhausted|${p}`, now);
+    },
+    exhausted: () => [...exhausted],
+    requests,
+    ok,
+  };
+}
+
+/** One query down the failover chain: cached answers are free; empty answers and errors move on to the next provider. */
+async function searchChain({ query, chain, pool, perQuery, http, env, cache, hm, errors, category }) {
+  const hits = [];
+  let answered = 0;
+  for (const p of chain) {
+    if (answered >= perQuery) break;
+    const key = `hm|${p}|${query}`;
+    let found = cache?.get(key);
+    if (!found) {
+      if (!pool.available(p)) continue;
+      pool.take(p);
+      try {
+        found = await engines[p].search(http, env, query, { days: null, count: hm.results_per_query, category });
+      } catch (e) {
+        pool.fail(p, e);
+        errors.push(`${p}: ${String(e?.message || e).slice(0, 160)}`);
+        continue;
+      }
+      if (found.length) cache?.set(key, found);
+    }
+    pool.answered(p);
+    if (!found.length) continue;
+    answered++;
+    hits.push(...found.map((h) => ({ ...h, provider: p, query })));
+  }
+  return hits;
+}
+
+async function hunterPeople({ http, env, job, ctx, cfg, pool }) {
   const domain = hostOf(job.companyUrl) || job.emails?.[0]?.split('@')[1] || '';
   const base = `https://api.hunter.io/v2/domain-search?${domain ? `domain=${encodeURIComponent(domain)}` : `company=${encodeURIComponent(job.company)}`}&limit=${cfg.hm_search.hunter_limit}&api_key=${encodeURIComponent(env.HUNTER_API_KEY.trim())}`;
   const depts = [ctx.hunterDepartment, ...cfg.hm_search.hunter_extra_departments].filter((d, i, a) => d && a.indexOf(d) === i);
   const people = [];
   for (const d of depts) {
-    const data = await http.getJson(`${base}&department=${d}`);
+    if (!pool.available('hunter')) break;
+    pool.take('hunter');
+    let data;
+    try { data = await http.getJson(`${base}&department=${d}`); } catch (e) { pool.fail('hunter', e); throw e; }
+    pool.answered('hunter');
     for (const e of data?.data?.emails || []) {
       const name = [e.first_name, e.last_name].filter(Boolean).join(' ');
       if (!isPlausibleName(name)) continue;
@@ -339,7 +396,7 @@ export function digDeeperLinks(ctx, webQueries) {
 }
 
 /**
- * @returns {Promise<{ctx, candidates, digDeeper, providers: {used: string[], missing: string[]}, queries: number, errors: string[]}>}
+ * @returns {Promise<{ctx, candidates, digDeeper, providers: {used: string[], failed: string[], missing: string[], exhausted: string[], requests: object}, queries: number, errors: string[]}>}
  */
 export async function researchJob({ job, cfg, env, http, cache, logger }) {
   const hm = cfg.hm_search;
@@ -347,9 +404,12 @@ export async function researchJob({ job, cfg, env, http, cache, logger }) {
   const webQueries = expandTemplates(hm.queries, ctx, hm.max_queries, hm.leaders_per_query);
   const exaQueries = expandTemplates(hm.exa_queries, ctx, hm.max_queries, hm.leaders_per_query);
   const searchProviders = hm.providers.filter((p) => engines[p]);
-  const used = searchProviders.filter((p) => engines[p].ready(env));
+  const ready = searchProviders.filter((p) => engines[p].ready(env));
   const hunterOn = hm.providers.includes('hunter') && Boolean(env.HUNTER_API_KEY?.trim());
-  const missing = [...searchProviders.filter((p) => !used.includes(p)), ...(hm.providers.includes('hunter') && !hunterOn ? ['hunter'] : [])];
+  const missing = [...searchProviders.filter((p) => !ready.includes(p)), ...(hm.providers.includes('hunter') && !hunterOn ? ['hunter'] : [])];
+  const pool = createProviderPool([...ready, ...(hunterOn ? ['hunter'] : [])], hm, cache);
+  // Exa takes plain-language people queries, so it answers its own list rather than standing in for a web engine.
+  const webChain = ready.filter((p) => p !== 'exa');
   const errors = [];
   const people = [];
 
@@ -360,26 +420,17 @@ export async function researchJob({ job, cfg, env, http, cache, logger }) {
     people.push({ name: job.postedBy, title: '', source: 'posting', url: job.url, quote: `Posting created by ${job.postedBy} (${job.ats})`, evidence: ['named_in_posting', 'profile_at_company'] });
   }
 
-  const jobs = [];
-  const results = [];
+  let queries = 0;
   const run = async (webQs, exaQs) => {
-    const batch = [];
-    for (const p of used) for (const q of p === 'exa' ? exaQs : webQs) batch.push({ provider: p, query: q });
-    const res = await mapLimit(batch, 4, async ({ provider, query }) => {
-      const key = `hm|${provider}|${query}`;
-      let hits = cache?.get(key);
-      if (!hits) {
-        hits = await engines[provider].search(http, env, query, { days: null, count: hm.results_per_query, category: provider === 'exa' ? 'people' : undefined });
-        if (hits.length) cache?.set(key, hits);
-      }
-      return hits.map((h) => ({ ...h, provider, query }));
-    });
-    res.forEach((r, i) => {
-      if (!r.ok) { errors.push(`${batch[i].provider}: ${String(r.error?.message || r.error).slice(0, 160)}`); return; }
-      for (const hit of r.value) people.push(...peopleFromHit(hit, ctx, cfg));
-    });
-    jobs.push(...batch);
-    results.push(...res);
+    const batch = [
+      ...(webChain.length ? webQs.map((query) => ({ query, chain: webChain })) : []),
+      ...(ready.includes('exa') ? exaQs.map((query) => ({ query, chain: ['exa'], category: 'people' })) : []),
+    ];
+    const one = (b) => searchChain({ ...b, pool, perQuery: hm.providers_per_query, http, env, cache, hm, errors });
+    // The first query runs alone so a spent key costs one request, not one per worker.
+    const res = [...await mapLimit(batch.slice(0, 1), 1, one), ...await mapLimit(batch.slice(1), 4, one)];
+    for (const r of res) if (r.ok) for (const hit of r.value) people.push(...peopleFromHit(hit, ctx, cfg));
+    queries += batch.length;
   };
   await run(webQueries, exaQueries);
   // Narrow (team, location) queries can come back empty; widen to company-level leaders before giving up.
@@ -390,19 +441,20 @@ export async function researchJob({ job, cfg, env, http, cache, logger }) {
     await run(expandTemplates(fb.queries, ctx, fb.max_queries, all).filter((q) => !webQueries.includes(q)),
       expandTemplates(fb.exa_queries, ctx, fb.max_queries, all).filter((q) => !exaQueries.includes(q)));
   }
-  logger.info(`Search HM: ${jobs.length} queries across ${used.join(', ') || 'no search provider'}${hunterOn ? ' + hunter' : ''}`);
-
   if (hunterOn) {
-    try { people.push(...await hunterPeople({ http, env, job, ctx, cfg })); } catch (e) { errors.push(`hunter: ${e.message.slice(0, 160)}`); }
+    try { people.push(...await hunterPeople({ http, env, job, ctx, cfg, pool })); } catch (e) { errors.push(`hunter: ${e.message.slice(0, 160)}`); }
   }
+  const tried = [...new Set([...Object.keys(pool.ok), ...Object.keys(pool.requests)])];
+  logger.info(`Search HM: ${queries} queries; requests ${tried.map((p) => `${p}=${pool.requests[p]}`).join(' ') || 'none (all cached)'}${pool.exhausted().length ? `; out of quota: ${pool.exhausted().join(', ')}` : ''}`);
 
-  const failedProviders = used.filter((p) => results.every((r, i) => jobs[i].provider !== p || !r.ok));
+  // A provider is "used" when it answered at least once; "failed" when every request it made errored.
+  const failed = tried.filter((p) => !pool.ok[p]);
   return {
     ctx,
     candidates: rankCandidates(people, cfg),
     digDeeper: digDeeperLinks(ctx, webQueries),
-    providers: { used: used.filter((p) => !failedProviders.includes(p)).concat(hunterOn ? ['hunter'] : []), failed: failedProviders, missing },
-    queries: jobs.length,
+    providers: { used: tried.filter((p) => pool.ok[p]), failed, missing, exhausted: pool.exhausted(), requests: pool.requests },
+    queries,
     errors: [...new Set(errors)].slice(0, 12),
   };
 }

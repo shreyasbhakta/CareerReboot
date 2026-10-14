@@ -16,7 +16,7 @@ type Candidate = {
 type Result = {
   ok: true; searchedAt: string; candidates: Candidate[]; digDeeper: { label: string; url: string }[]; model: string | null;
   job: { url: string; ats: string; title: string; company: string; team: string; location: string; reportsTo: string; datePosted: string; emails: string[]; sources: string[]; excerpt: string; textChars: number };
-  providers: { used: string[]; failed: string[]; missing: string[] }; queries: number; requests: number; runtimeSeconds: number; warnings: string[]; note: string;
+  providers: { used: string[]; failed: string[]; missing: string[]; exhausted?: string[] }; queries: number; requests: number; runtimeSeconds: number; warnings: string[]; note: string;
 };
 type Status = { installed: boolean; history: Result[]; providers: Record<string, boolean> };
 
@@ -143,7 +143,7 @@ function ResultView({ r }: { r: Result }) {
         </p>
         {j.emails.length > 0 && <p className="text-xs"><span className="text-muted">Emails in the posting: </span>{j.emails.join(", ")}</p>}
         <p className="text-xs text-faint">
-          Searched {new Date(r.searchedAt).toLocaleString()} · {r.queries} queries via {r.providers.used.join(", ") || "no provider"} · {r.runtimeSeconds}s{r.model ? ` · re-ranked by ${r.model}` : ""}
+          Searched {new Date(r.searchedAt).toLocaleString()} · {r.queries} queries via {r.providers.used.join(", ") || "no provider"} · {r.runtimeSeconds}s{r.model ? ` · re-ranked by ${r.model}` : ""}{r.providers.exhausted?.length ? ` · out of quota: ${r.providers.exhausted.join(", ")}` : ""}
         </p>
       </Card>
 

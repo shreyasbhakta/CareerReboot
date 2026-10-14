@@ -142,6 +142,9 @@ export function validateConfig(c) {
       && Number.isInteger(hm.fallback.below_candidates) && Number.isInteger(hm.fallback.max_queries) && hm.fallback.max_queries >= 0,
     'hm_search.fallback needs below_candidates, max_queries, queries[] and exa_queries[]');
     need(Number.isInteger(hm.post_max_age_days) && hm.post_max_age_days >= 1, 'hm_search.post_max_age_days must be a positive integer');
+    need(Number.isInteger(hm.providers_per_query) && hm.providers_per_query >= 1, 'hm_search.providers_per_query must be a positive integer');
+    need(isObj(hm.budgets) && (hm.providers || []).every((p) => Number.isInteger(hm.budgets[p]) && hm.budgets[p] >= 0), 'hm_search.budgets must give every provider a request count >= 0');
+    need(typeof hm.exhausted_hours === 'number' && hm.exhausted_hours > 0 && hm.exhausted_hours <= hm.cache_hours, 'hm_search.exhausted_hours must be > 0 and <= cache_hours');
   }
   return errs;
 }

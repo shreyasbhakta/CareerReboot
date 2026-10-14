@@ -150,3 +150,27 @@ test('search-hm: fourth live round (students are not leads)', () => {
   assert.deepEqual(hit('Walter Stark - Tech Lead - Palantir | LinkedIn', "I am a master's student in computer science at Cornell."), []);
   assert.equal(hit('Ana Ruiz - Engineering Manager - Palantir | LinkedIn', 'I mentor students and interns.').length, 1);
 });
+
+test('search-hm: a provider out of credits is skipped and its queries go to the next one', async () => {
+  const calls = [];
+  const c = cfg();
+  c.hm_search.max_queries = 3;
+  c.hm_search.providers = ['serper', 'brave'];
+  const fetchImpl = async (url) => {
+    calls.push(String(url));
+    if (url.startsWith('https://google.serper.dev/')) return { ok: false, status: 402, headers: { get: () => null }, text: async () => 'Not enough credits' };
+    return fakeFetch([])(url);
+  };
+  const dataDir = mkdtempSync(join(tmpdir(), 'hm-'));
+  const env = { SERPER_API_KEY: 's', BRAVE_SEARCH_API_KEY: 'b' };
+  const r = await searchHm({ url: JOB_URL, env, cfg: c, logger: silentLogger, fetchImpl, dataDir });
+  const serperCalls = () => calls.filter((u) => u.startsWith('https://google.serper.dev/')).length;
+  assert.equal(serperCalls(), 1, 'one failed request, then serper is skipped');
+  assert.deepEqual(r.providers.exhausted, ['serper']);
+  assert.deepEqual(r.providers.used, ['brave']);
+  assert.equal(r.providers.requests.brave, r.queries, 'every query was answered by brave instead');
+  assert.ok(r.candidates.some((x) => x.name === 'Jane Park'));
+  c.hm_search.queries = ['"{company}" engineering manager'];
+  await searchHm({ url: JOB_URL, env, cfg: c, logger: silentLogger, fetchImpl, dataDir });
+  assert.equal(serperCalls(), 1, 'the spent key stays skipped on the next search');
+});
