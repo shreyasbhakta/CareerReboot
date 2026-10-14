@@ -57,6 +57,7 @@ const googleFresh = { day: 'qdr:d', week: 'qdr:w', month: 'qdr:m', year: 'qdr:y'
 
 export const engines = {
   searxng: {
+    env: 'SEARXNG_URL',
     ready: (env) => Boolean(env.SEARXNG_URL?.trim()),
     async search(http, env, query, { days, count }) {
       const url = `${env.SEARXNG_URL.trim().replace(/\/+$/, '')}/search?q=${encodeURIComponent(query)}&format=json${days ? `&time_range=${rangeFor(days)}` : ''}`;
@@ -65,6 +66,7 @@ export const engines = {
     },
   },
   brave: {
+    env: 'BRAVE_SEARCH_API_KEY',
     ready: (env) => Boolean(env.BRAVE_SEARCH_API_KEY?.trim()),
     async search(http, env, query, { days, count }) {
       const url = `https://api.search.brave.com/res/v1/web/search?q=${encodeURIComponent(query)}&count=${Math.min(count, 20)}${days ? `&freshness=${braveFresh[rangeFor(days)]}` : ''}`;
@@ -75,6 +77,7 @@ export const engines = {
     },
   },
   serper: {
+    env: 'SERPER_API_KEY',
     ready: (env) => Boolean(env.SERPER_API_KEY?.trim()),
     async search(http, env, query, { days, count }) {
       const data = await http.postJson('https://google.serper.dev/search', { q: query, num: Math.min(count, 20), ...(days ? { tbs: googleFresh[rangeFor(days)] } : {}) }, { headers: { 'x-api-key': env.SERPER_API_KEY.trim() } });
@@ -82,6 +85,7 @@ export const engines = {
     },
   },
   exa: {
+    env: 'EXA_API_KEY',
     ready: (env) => Boolean(env.EXA_API_KEY?.trim()),
     async search(http, env, query, { days, count, category }) {
       const body = { query, type: 'auto', numResults: Math.min(count, 25), contents: { text: { maxCharacters: 600 } }, ...(category ? { category } : {}) };

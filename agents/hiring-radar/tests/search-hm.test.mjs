@@ -173,4 +173,16 @@ test('search-hm: a provider out of credits is skipped and its queries go to the 
   c.hm_search.queries = ['"{company}" engineering manager'];
   await searchHm({ url: JOB_URL, env, cfg: c, logger: silentLogger, fetchImpl, dataDir });
   assert.equal(serperCalls(), 1, 'the spent key stays skipped on the next search');
+  c.hm_search.queries = ['"{company}" director of engineering'];
+  await searchHm({ url: JOB_URL, env: { ...env, SERPER_API_KEY: 'new' }, cfg: c, logger: silentLogger, fetchImpl, dataDir });
+  assert.equal(serperCalls(), 2, 'a replaced key is tried again straight away');
+});
+
+test('search-hm: Exa Markdown profiles name the profile owner, not a phrase from the text', () => {
+  const c = cfg();
+  const ctx = { ...queryContext({ title: 'Software Engineer', company: 'PayPal', team: '', location: '' }, c), reportsTo: '' };
+  const snippet = '# Sunil Shetty Engineering Leader at Paypal | Ex-Intuit ## Experience ### Engineering Manager - Merchant Reliability - [PayPal](https://www.paypal.com)';
+  const people = peopleFromHit({ url: 'https://linkedin.com/in/sunil-shetty-1', title: 'Sunil Shetty', snippet, provider: 'exa' }, ctx, c);
+  assert.deepEqual(people.map((p) => p.name), ['Sunil Shetty']);
+  assert.equal(people[0].title, 'Engineering Leader at Paypal');
 });

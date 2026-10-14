@@ -4,7 +4,7 @@
 // attributes them; every lead carries the evidence and links behind it.
 import { engines } from '../collectors/web-search.mjs';
 import { mapLimit } from '../lib/http.mjs';
-import { normalizeText } from '../lib/text.mjs';
+import { normalizeText, sha1 } from '../lib/text.mjs';
 import { decodeEntities } from '../../career-ops/providers/_html-entities.mjs';
 import {
   isPlausibleName, cleanLinkedInProfileUrl, parseProfileTitle, parsePostAuthor, extractNamedContact,
@@ -193,7 +193,9 @@ const SNIPPET_PERSON = /\b([A-Z][a-z'’-]+(?:\s+[A-Z][a-z'’.-]+){1,2}),\s+(?:
  * One search hit -> zero or more {name, title, profileUrl, evidence[], quote}.
  * @param {{url, title, snippet, provider, query}} hit
  */
-const clean = (s) => decodeEntities(decodeEntities(String(s || '')).replace(/<[^>]+>/g, '')).replace(/\s+/g, ' ').trim();
+// Exa returns Markdown: keep link text, drop link targets and heading marks.
+const clean = (s) => decodeEntities(decodeEntities(String(s || '')).replace(/<[^>]+>/g, ''))
+  .replace(/\[([^\]]*)\]\([^)]*\)/g, '$1').replace(/(^|\s)#{1,6}\s/g, ' ').replace(/\s+/g, ' ').trim();
 
 export function peopleFromHit(rawHit, ctx, cfg, now = Date.now()) {
   const snippet = clean(rawHit.snippet);
@@ -210,7 +212,9 @@ export function peopleFromHit(rawHit, ctx, cfg, now = Date.now()) {
     if (p.name && isPlausibleName(p.name) && !looksLikeBrand(p.name, ctx.company)) out.push({ ...p, source: hit.provider, url: hit.url, quote: `${dated}${hit.snippet || hit.title}`.slice(0, 240), query: hit.query });
   };
 
-  const named = extractNamedContact(text);
+  const profileUrl = cleanLinkedInProfileUrl(hit.url);
+  // On a profile page every name is the owner's or a colleague's; "Contact: Name" parsing is for postings and pages.
+  const named = profileUrl ? null : extractNamedContact(text);
   if (named && atCompany) push({ name: named.name, title: named.title, evidence: ['named_in_posting', 'profile_at_company', ...titleEvidence(named.title, ctx, cfg)] });
 
   if (isPost) {
@@ -227,14 +231,14 @@ export function peopleFromHit(rawHit, ctx, cfg, now = Date.now()) {
     return out;
   }
 
-  const profileUrl = cleanLinkedInProfileUrl(hit.url);
   if (profileUrl) {
     let p = parseProfileTitle(hit.title);
     // Exa's people index titles a profile with the bare name; the headline is in the text.
     if (!p) {
       const bare = String(hit.title || '').split(/\s+[|–-]\s+/)[0].trim();
-      if (isPlausibleName(bare)) p = { name: bare, title: String(hit.snippet || '').split(/[.\n|]/)[0].slice(0, 140), company: '' };
+      if (isPlausibleName(bare)) p = { name: bare, title: '', company: '' };
     }
+    if (p && !p.title) p = { ...p, title: String(hit.snippet || '').replace(p.name, '').split(/[.\n|]/)[0].trim().slice(0, 140) };
     if (!p || !atCompany || FORMER.test(`${p.title} ${p.company}`) || STUDENT.test(p.title) || SELF_STUDENT.test(hit.snippet)) return out;
     if (p.company && !mentionsCompany(p.company, ctx.company) && !mentionsCompany(p.title, ctx.company)) return out;
     if ([p.company, p.title].some((x) => isOtherCompany(x, ctx.company))) return out;
@@ -312,10 +316,11 @@ export function hostOf(url) { try { return new URL(url).hostname.replace(/^www\.
 // Bad key / out of credits: skip the provider until the limit can have reset, not just for this search.
 const OUT_OF_CREDIT = /\b(quota|credits?|usage limit|plan limit|exceeded your|payment required|insufficient)\b/i;
 
-/** Per-search request budgets plus keys that hit a limit (remembered across searches in the cache). */
-export function createProviderPool(names, hm, cache, now = Date.now()) {
+/** Per-search request budgets plus keys that hit a limit (remembered across searches in the cache, per key, so a new key is tried at once). */
+export function createProviderPool(names, hm, cache, env = {}, now = Date.now()) {
   const left = Object.fromEntries(names.map((p) => [p, hm.budgets[p] ?? 0]));
-  const exhausted = new Set(names.filter((p) => { const at = cache?.get(`hm|exhausted|${p}`); return at && now - at < hm.exhausted_hours * 36e5; }));
+  const mark = (p) => `hm|exhausted|${p}|${sha1(String(env[engines[p]?.env || 'HUNTER_API_KEY'] || '')).slice(0, 12)}`;
+  const exhausted = new Set(names.filter((p) => { const at = cache?.get(mark(p)); return at && now - at < hm.exhausted_hours * 36e5; }));
   const requests = {};
   const ok = {};
   return {
@@ -326,7 +331,7 @@ export function createProviderPool(names, hm, cache, now = Date.now()) {
     fail(p, e) {
       const persistent = [401, 402, 403].includes(e?.status) || OUT_OF_CREDIT.test(e?.message || '');
       if (persistent || e?.status === 429) exhausted.add(p);
-      if (persistent) cache?.set(`hm|exhausted|${p}`, now);
+      if (persistent) cache?.set(mark(p), now);
     },
     exhausted: () => [...exhausted],
     requests,
@@ -407,7 +412,7 @@ export async function researchJob({ job, cfg, env, http, cache, logger }) {
   const ready = searchProviders.filter((p) => engines[p].ready(env));
   const hunterOn = hm.providers.includes('hunter') && Boolean(env.HUNTER_API_KEY?.trim());
   const missing = [...searchProviders.filter((p) => !ready.includes(p)), ...(hm.providers.includes('hunter') && !hunterOn ? ['hunter'] : [])];
-  const pool = createProviderPool([...ready, ...(hunterOn ? ['hunter'] : [])], hm, cache);
+  const pool = createProviderPool([...ready, ...(hunterOn ? ['hunter'] : [])], hm, cache, env);
   // Exa takes plain-language people queries, so it answers its own list rather than standing in for a web engine.
   const webChain = ready.filter((p) => p !== 'exa');
   const errors = [];
