@@ -5,7 +5,7 @@ export type Mode = "complete" | "fast" | "cv";
 
 export const MODES: Record<Mode, { label: string; tagline: string; home: string; routes: string[] | "all" }> = {
   complete: { label: "Complete", tagline: "Pipeline, discovery, research, follow-ups, analytics and the CV builder.", home: "/dashboard", routes: "all" },
-  fast: { label: "Fast paced", tagline: "Hiring Radar and the CV builder. Nothing else.", home: "/hiring-radar", routes: ["/hiring-radar", "/cv"] },
+  fast: { label: "Fast paced", tagline: "Hiring Radar, Search HM and the CV builder. Nothing else.", home: "/hiring-radar", routes: ["/hiring-radar", "/search-hm", "/cv"] },
   cv: { label: "CV builder", tagline: "Only the CV builder.", home: "/cv", routes: ["/cv"] },
 };
 

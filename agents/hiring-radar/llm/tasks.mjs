@@ -1,5 +1,5 @@
-// The only two places an LLM is used. Inputs are truncated post text plus a
-// minimal profile summary — never contact details, phone, email or address.
+// Every place an LLM is used. Inputs are truncated public text plus a minimal
+// profile summary — never the candidate's contact details, phone or address.
 import { truncate } from '../lib/text.mjs';
 
 function profileSummary(cfg) {
@@ -36,6 +36,33 @@ export async function explainMatch(llm, cfg, signal) {
     validate: (o) => {
       if (!o.why || !o.outreach_angle) throw new Error('missing fields');
       return { why: String(o.why).slice(0, 240), outreachAngle: String(o.outreach_angle).slice(0, 260) };
+    },
+  });
+  return res.ok ? res.data : null;
+}
+
+const SYSTEM_RANK_HM = 'You judge who most likely is the hiring manager or poster for one job, using ONLY the evidence given (public search results). Reply with ONLY JSON: {"ranking": [{"id": string, "likelihood": number 0-100, "role": "hiring_manager"|"recruiter"|"poster"|"team"|"unlikely", "reason": string<=140 chars}]}. Include every id given, never add people. Prefer a manager of the job\'s own team and function at the right level; a recruiter is likely the poster, not the hiring manager; executives far above the role, people in an unrelated function, people at a different company with a similar name, and evidence about an older or different opening are unlikely. Dates in [brackets] are when the source was published.';
+
+/** Model re-read of the rule-based leads. Returns {id -> {likelihood, role, reason}} or null. */
+export async function rankHiringCandidates(llm, job, candidates) {
+  if (!candidates.length) return null;
+  const ids = new Set(candidates.map((c) => c.id));
+  const lines = candidates.map((c) => `${c.id}: ${c.name} | ${c.title || 'title unknown'} | evidence: ${c.evidence.slice(0, 4).map((e) => `${e.labels.join(', ')} ("${truncate(e.quote, 140)}")`).join('; ')}`);
+  const res = await llm.complete({
+    task: 'rank-hm',
+    maxTokens: 1500,
+    system: SYSTEM_RANK_HM,
+    user: `Job: ${job.title} at ${job.company}${job.team ? `, team ${job.team}` : ''}${job.location ? `, ${job.location}` : ''}${job.reportsTo ? `, reports to ${job.reportsTo}` : ''}.\nDescription excerpt:\n"""${truncate(job.text, 1200)}"""\nCandidates:\n${lines.join('\n')}`,
+    validate: (o) => {
+      if (!Array.isArray(o.ranking)) throw new Error('ranking missing');
+      const out = {};
+      for (const r of o.ranking) {
+        const likelihood = Number(r?.likelihood);
+        if (!ids.has(r?.id) || !(likelihood >= 0 && likelihood <= 100)) continue;
+        out[r.id] = { likelihood: Math.round(likelihood), role: ['hiring_manager', 'recruiter', 'poster', 'team', 'unlikely'].includes(r.role) ? r.role : null, reason: String(r.reason || '').slice(0, 160) };
+      }
+      if (!Object.keys(out).length) throw new Error('no usable ranking');
+      return out;
     },
   });
   return res.ok ? res.data : null;

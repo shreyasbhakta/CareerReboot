@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import Link from "next/link";
 import * as yaml from "js-yaml";
 import { CheckCircle2, Circle, Loader2, Play, ExternalLink, Flame } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -319,6 +320,7 @@ function SignalCard({ s, refresh, selected, onToggle }: { s: any; refresh: () =>
         </div>
         <div className="flex shrink-0 flex-col items-end gap-1.5">
           <a href={s.sourceUrl} target="_blank" rel="noreferrer" onClick={markSeen} onAuxClick={markSeen} className="inline-flex items-center gap-1 text-xs text-brand hover:underline">Open <ExternalLink className="size-3" /></a>
+          <Link href={`/search-hm?${new URLSearchParams({ url: s.sourceUrl, company: s.company.name || "", title: s.role.raw || s.role.canonical || "" })}`} className="text-xs text-muted hover:text-foreground hover:underline">Search HM</Link>
           {s.metadata.secondDegreeUrl && <a href={s.metadata.secondDegreeUrl} target="_blank" rel="noreferrer" title="Opens LinkedIn people search filtered to 2nd-degree connections who mention this company — in your own session" className="text-xs text-muted hover:text-foreground hover:underline">Friends of friends ↗</a>}
           <select disabled={busy} value={s.status} onChange={(e) => setStatus(e.target.value)} className="rounded-md border border-border bg-surface px-1.5 py-1 text-xs">
             {STATUSES.map((x) => <option key={x}>{x}</option>)}
@@ -436,6 +438,12 @@ function Settings({ state, refresh }: { state: State; refresh: () => void }) {
         <h2 className="text-sm font-semibold">Search backend <span className="font-normal text-muted">— finds LinkedIn / X hiring posts (pick one)</span></h2>
         <Field k="SEARXNG_URL" label="SearXNG URL" placeholder="http://localhost:8888" help="self-hosted; also enables hiring-person lookup" {...p} />
         <Field k="BRAVE_SEARCH_API_KEY" label="Brave Search API key" secret placeholder="BSA…" {...p} />
+      </Card>
+      <Card className="space-y-3 p-4">
+        <h2 className="text-sm font-semibold">People search <span className="font-normal text-muted">— optional; each one adds evidence to Search HM</span></h2>
+        <Field k="SERPER_API_KEY" label="Serper API key" secret placeholder="" help="Google results; serper.dev" {...p} />
+        <Field k="EXA_API_KEY" label="Exa API key" secret placeholder="" help="people-aware search; exa.ai" {...p} />
+        <Field k="HUNTER_API_KEY" label="Hunter API key" secret placeholder="" help="company staff directory and emails; hunter.io" {...p} />
       </Card>
       <Card className="space-y-3 p-4">
         <h2 className="text-sm font-semibold">Model provider <span className="font-normal text-muted">— optional; off unless a provider is chosen</span></h2>

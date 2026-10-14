@@ -40,9 +40,9 @@ function adapters(env) {
     anthropic: {
       name: 'anthropic',
       ready: () => Boolean(env.ANTHROPIC_API_KEY),
-      call: async (http, { model, system, user }) => {
+      call: async (http, { model, system, user, maxTokens }) => {
         const r = await http.postJson('https://api.anthropic.com/v1/messages', {
-          model, max_tokens: 600, temperature: 0, system, messages: [{ role: 'user', content: user }],
+          model, max_tokens: maxTokens || 600, temperature: 0, system, messages: [{ role: 'user', content: user }],
         }, { headers: { 'x-api-key': env.ANTHROPIC_API_KEY, 'anthropic-version': '2023-06-01' } });
         return { text: (r?.content || []).map((b) => b.text || '').join(''), usage: r?.usage ? { in: r.usage.input_tokens, out: r.usage.output_tokens } : null };
       },
@@ -101,10 +101,10 @@ export function createLlm({ cfg, env = process.env, logger, cachePath, readOnlyC
   }
 
   /**
-   * @param {{task: string, system: string, user: string, validate: (obj: any) => any}} req
+   * @param {{task: string, system: string, user: string, validate: (obj: any) => any, maxTokens?: number}} req
    * @returns {Promise<{ok: true, data: any, provider: string, cached?: boolean} | {ok: false, error: string}>}
    */
-  async function complete({ task, system, user, validate }) {
+  async function complete({ task, system, user, validate, maxTokens }) {
     if (!enabled || usable.length === 0) return { ok: false, error: 'llm disabled or no provider configured' };
     const key = sha1(`${task}\n${system}\n${user}`);
     const hit = cache[key];
@@ -116,7 +116,7 @@ export function createLlm({ cfg, env = process.env, logger, cachePath, readOnlyC
       if (stats.calls >= cfg.llm.max_calls) break;
       stats.calls++;
       try {
-        const out = await table[name].call(http, { model: modelFor(name), system, user });
+        const out = await table[name].call(http, { model: modelFor(name), system, user, maxTokens });
         const data = validate(extractJson(out.text));
         if (out.usage) { stats.tokensIn += out.usage.in || 0; stats.tokensOut += out.usage.out || 0; }
         cache[key] = { data, at: Date.now() };

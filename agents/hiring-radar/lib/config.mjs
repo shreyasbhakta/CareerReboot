@@ -124,6 +124,28 @@ export function validateConfig(c) {
   need(['new', 'all'].includes(c.notify?.scope), 'notify.scope must be "new" or "all"');
   need(c.notify?.min_score == null || (c.notify.min_score >= 0 && c.notify.min_score <= 100), 'notify.min_score must be null or 0-100');
   need(Number.isInteger(c.notify?.max_items) && c.notify.max_items >= 1, 'notify.max_items must be a positive integer');
+
+  const hm = c.hm_search;
+  need(isObj(hm), 'hm_search is required');
+  if (isObj(hm)) {
+    need(Array.isArray(hm.providers), 'hm_search.providers must be a list');
+    need(Array.isArray(hm.queries) && hm.queries.length > 0, 'hm_search.queries must be a non-empty list');
+    need(Array.isArray(hm.exa_queries), 'hm_search.exa_queries must be a list');
+    for (const k of ['max_queries', 'results_per_query', 'max_candidates', 'leaders_per_query']) need(Number.isInteger(hm[k]) && hm[k] >= 1, `hm_search.${k} must be a positive integer`);
+    for (const f of [...(hm.functions || []), hm.default_function]) {
+      need(f?.id && Array.isArray(f?.leaders) && f.leaders.length > 0, `hm_search function needs id and leaders[]: ${JSON.stringify(f)}`);
+    }
+    for (const f of hm.functions || []) need(Array.isArray(f?.match) && f.match.length > 0, `hm_search.functions[${f?.id}].match must be a non-empty list`);
+    need(isObj(hm.evidence_points) && Object.values(hm.evidence_points).every((v) => typeof v === 'number' && v >= 0), 'hm_search.evidence_points must map evidence to numbers >= 0');
+    need(hm.llm_weight >= 0 && hm.llm_weight <= 1, 'hm_search.llm_weight must be 0-1');
+    need(isObj(hm.fallback) && Array.isArray(hm.fallback.queries) && Array.isArray(hm.fallback.exa_queries)
+      && Number.isInteger(hm.fallback.below_candidates) && Number.isInteger(hm.fallback.max_queries) && hm.fallback.max_queries >= 0,
+    'hm_search.fallback needs below_candidates, max_queries, queries[] and exa_queries[]');
+    need(Number.isInteger(hm.post_max_age_days) && hm.post_max_age_days >= 1, 'hm_search.post_max_age_days must be a positive integer');
+    need(Number.isInteger(hm.providers_per_query) && hm.providers_per_query >= 1, 'hm_search.providers_per_query must be a positive integer');
+    need(isObj(hm.budgets) && (hm.providers || []).every((p) => Number.isInteger(hm.budgets[p]) && hm.budgets[p] >= 0), 'hm_search.budgets must give every provider a request count >= 0');
+    need(typeof hm.exhausted_hours === 'number' && hm.exhausted_hours > 0 && hm.exhausted_hours <= hm.cache_hours, 'hm_search.exhausted_hours must be > 0 and <= cache_hours');
+  }
   return errs;
 }
 

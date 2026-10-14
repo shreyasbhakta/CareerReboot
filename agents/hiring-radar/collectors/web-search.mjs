@@ -1,6 +1,6 @@
 // Public web-search discovery. Queries are generated from configured roles,
-// phrases and skills; the engine adapter (SearXNG / Brave) is isolated so
-// adding another provider is one function.
+// phrases and skills; the engine adapters are isolated so adding another
+// provider is one function. `days: null` searches without a freshness filter.
 import { termRegex } from '../lib/text.mjs';
 import { companyFromJobTitle } from '../extractors/company.mjs';
 
@@ -53,24 +53,45 @@ export function generateQueries(cfg) {
 
 const rangeFor = (days) => (days <= 1 ? 'day' : days <= 7 ? 'week' : days <= 31 ? 'month' : 'year');
 const braveFresh = { day: 'pd', week: 'pw', month: 'pm', year: 'py' };
+const googleFresh = { day: 'qdr:d', week: 'qdr:w', month: 'qdr:m', year: 'qdr:y' };
 
 export const engines = {
   searxng: {
+    env: 'SEARXNG_URL',
     ready: (env) => Boolean(env.SEARXNG_URL?.trim()),
     async search(http, env, query, { days, count }) {
-      const url = `${env.SEARXNG_URL.trim().replace(/\/+$/, '')}/search?q=${encodeURIComponent(query)}&format=json&time_range=${rangeFor(days)}`;
+      const url = `${env.SEARXNG_URL.trim().replace(/\/+$/, '')}/search?q=${encodeURIComponent(query)}&format=json${days ? `&time_range=${rangeFor(days)}` : ''}`;
       const data = await http.getJson(url);
       return (data?.results || []).slice(0, count).map((r) => ({ url: r.url, title: r.title, snippet: r.content, date: r.publishedDate || r.published_date || null }));
     },
   },
   brave: {
+    env: 'BRAVE_SEARCH_API_KEY',
     ready: (env) => Boolean(env.BRAVE_SEARCH_API_KEY?.trim()),
     async search(http, env, query, { days, count }) {
-      const url = `https://api.search.brave.com/res/v1/web/search?q=${encodeURIComponent(query)}&count=${Math.min(count, 20)}&freshness=${braveFresh[rangeFor(days)]}`;
+      const url = `https://api.search.brave.com/res/v1/web/search?q=${encodeURIComponent(query)}&count=${Math.min(count, 20)}${days ? `&freshness=${braveFresh[rangeFor(days)]}` : ''}`;
       const data = await http.getJson(url, { headers: { 'x-subscription-token': env.BRAVE_SEARCH_API_KEY.trim() } });
       return (data?.web?.results || []).slice(0, count).map((r) => ({
         url: r.url, title: r.title, snippet: (r.description || '').replace(/<[^>]+>/g, ''), date: r.page_age || r.age || null,
       }));
+    },
+  },
+  serper: {
+    env: 'SERPER_API_KEY',
+    ready: (env) => Boolean(env.SERPER_API_KEY?.trim()),
+    async search(http, env, query, { days, count }) {
+      const data = await http.postJson('https://google.serper.dev/search', { q: query, num: Math.min(count, 20), ...(days ? { tbs: googleFresh[rangeFor(days)] } : {}) }, { headers: { 'x-api-key': env.SERPER_API_KEY.trim() } });
+      return (data?.organic || []).slice(0, count).map((r) => ({ url: r.link, title: r.title, snippet: r.snippet || '', date: r.date || null }));
+    },
+  },
+  exa: {
+    env: 'EXA_API_KEY',
+    ready: (env) => Boolean(env.EXA_API_KEY?.trim()),
+    async search(http, env, query, { days, count, category }) {
+      const body = { query, type: 'auto', numResults: Math.min(count, 25), contents: { text: { maxCharacters: 600 } }, ...(category ? { category } : {}) };
+      if (days) body.startPublishedDate = new Date(Date.now() - days * 864e5).toISOString();
+      const data = await http.postJson('https://api.exa.ai/search', body, { headers: { 'x-api-key': env.EXA_API_KEY.trim() } });
+      return (data?.results || []).slice(0, count).map((r) => ({ url: r.url, title: r.title || r.author || '', snippet: (r.text || '').replace(/\s+/g, ' ').trim(), date: r.publishedDate || null }));
     },
   },
 };

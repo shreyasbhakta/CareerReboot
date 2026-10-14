@@ -33,6 +33,7 @@ Works with zero keys (Hacker News "Who is hiring?" + public ATS boards). Add a s
 |---|---|
 | `SEARXNG_URL` | Self-hosted search (`agents/career-ops/deploy/searxng`). Also enables hiring-person lookup. |
 | `BRAVE_SEARCH_API_KEY` | Brave Search API. |
+| `SERPER_API_KEY`, `EXA_API_KEY`, `HUNTER_API_KEY` | Extra people-search sources for Search HM (Google results, people-aware search, company staff directory). |
 | `MODEL_PROVIDER` (+ `MODEL_NAME`, `MODEL_BASE_URL`, provider key) | Opt-in LLM for ambiguous posts and short explanations. |
 | `LINKEDIN_CONNECTIONS_CSV` | Path to your `Connections.csv` (default `agents/career-ops/data/Connections.csv`). |
 | `HIRING_RADAR_NOTIFY=true` + `HIRING_RADAR_WEBHOOK_URL` | Optional webhook summary. |
@@ -53,6 +54,16 @@ Works with zero keys (Hacker News "Who is hiring?" + public ATS boards). Add a s
 ```
 
 Exit codes: `0` ok (including an empty scan) · `1` every attempted source failed · `2` invalid config.
+
+## Search HM
+
+Who is behind one job posting? `node agents/hiring-radar/search-hm.mjs <job-url>` (or the dashboard's **Search HM** page) reads the posting (ATS API, schema.org JobPosting, page meta; LinkedIn URLs are never fetched, paste the description instead), runs targeted searches through the configured providers in failover order (per-search budgets; a key that is rate-limited or out of credits is skipped and its queries go to the next provider), and ranks the people found by evidence: named in the posting, posted about the job, leader title for the job's function, team or "reports to" match, staff directory listing. With a model provider set, a model re-reads the evidence and re-ranks. Every lead links to its sources; nothing is ever sent. Queries, leader titles per function and evidence points live under `hm_search` in `config.example.yml`; past searches are kept in `data/search-hm.json`.
+
+```
+--company --title --team --location   correct what the page gave
+--jd-file <path> | --jd-stdin          supply the description text
+--json  --no-llm  --no-save  --verbose
+```
 
 ## Configure
 
