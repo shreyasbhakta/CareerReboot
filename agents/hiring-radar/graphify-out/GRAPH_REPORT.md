@@ -1,17 +1,17 @@
 # Graph Report - hiring-radar  (2026-10-14)
 
 ## Corpus Check
-- 56 files · ~37,656 words
+- 56 files · ~37,695 words
 - Verdict: corpus is large enough that graph structure adds value.
 - Unclassified: 1 file(s) not represented in the graph (top: .csv 1)
 
 ## Summary
-- 392 nodes · 1027 edges · 17 communities (14 shown, 3 thin omitted)
+- 392 nodes · 1029 edges · 17 communities (14 shown, 3 thin omitted)
 - Extraction: 99% EXTRACTED · 1% INFERRED · 0% AMBIGUOUS · INFERRED: 8 edges (avg confidence: 0.86)
 - Token cost: 0 input · 0 output
 
 ## Graph Freshness
-- Built from commit: `7c37818c`
+- Built from commit: `69bee273`
 - Run `git rev-parse HEAD` and compare to check if the graph is stale.
 - Run `graphify update .` after code changes (no API cost).
 
@@ -68,8 +68,8 @@ Cohesion: 0.07
 Nodes (33): collector, pickCompanies(), providerDir, deepMerge(), isObj(), loadConfig(), profileOverlay(), readYaml() (+25 more)
 
 ### Community 1 - "research.mjs"
-Cohesion: 0.12
-Nodes (42): cleanLinkedInProfileUrl(), extractNamedContact(), isPlausibleName(), NOT_NAMES, parsePostAuthor(), parseProfileTitle(), personFromResult(), clean() (+34 more)
+Cohesion: 0.11
+Nodes (46): cleanLinkedInProfileUrl(), extractNamedContact(), isPlausibleName(), NOT_NAMES, parsePostAuthor(), parseProfileTitle(), personFromResult(), clean() (+38 more)
 
 ### Community 2 - "scan.mjs"
 Cohesion: 0.07
@@ -84,8 +84,8 @@ Cohesion: 0.17
 Nodes (15): createHttp(), acquire(), once(), release(), request(), spaceHost(), mapLimit(), parseRetryAfter() (+7 more)
 
 ### Community 5 - "job.mjs"
-Cohesion: 0.10
-Nodes (20): cleanCompany(), cleanTitle(), companyFromUrl(), escapeRe(), fetchJob(), fetchSmartRecruiters(), findReportsTo(), findTeam() (+12 more)
+Cohesion: 0.11
+Nodes (16): cleanCompany(), cleanTitle(), companyFromUrl(), escapeRe(), fetchJob(), fetchSmartRecruiters(), findReportsTo(), findTeam() (+8 more)
 
 ### Community 6 - "web-search.mjs"
 Cohesion: 0.14
@@ -136,7 +136,7 @@ _Questions this graph is uniquely positioned to answer:_
 - **Why does `normalizeText()` connect `research.mjs` to `connections.mjs`, `scan.mjs`, `pipeline.mjs`, `storage.test.mjs`?**
   _High betweenness centrality (0.044) - this node is a cross-community bridge._
 - **Should `research.mjs` be split into smaller, more focused modules?**
-  _Cohesion score 0.11563367252543941 - nodes in this community are weakly interconnected._
+  _Cohesion score 0.10708898944193061 - nodes in this community are weakly interconnected._
 - **Should `scan.mjs` be split into smaller, more focused modules?**
   _Cohesion score 0.07005649717514124 - nodes in this community are weakly interconnected._
 - **Should `pipeline.mjs` be split into smaller, more focused modules?**

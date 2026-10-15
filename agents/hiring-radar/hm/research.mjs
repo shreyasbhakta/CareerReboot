@@ -86,7 +86,8 @@ function namesOtherCompany(phrases, company) {
 
 /** Brand / fan accounts ("Palantir OG", "Acme Careers") are not people. */
 export function looksLikeBrand(name, company) {
-  return mentionsCompany(name, company) || BRAND_WORDS.test(name);
+  // All-caps names are handles ("BIGDATA DOCTOR"); "AI" ends company page names ("Fast Code AI").
+  return mentionsCompany(name, company) || BRAND_WORDS.test(name) || !/[a-z]/.test(name) || /\bAI$/.test(name);
 }
 
 /** Creation time encoded in a LinkedIn activity / X status URL, else null. */
@@ -181,8 +182,8 @@ export function postAuthorFromTitle(title) {
   const t = String(title || '');
   const a = parsePostAuthor(t);
   if (a) return a;
-  const pos = t.match(/^(.{3,60}?)['’]s Post\b/i)?.[1]?.trim();
-  if (pos && isPlausibleName(pos)) return pos;
+  const pos = t.match(/^(.{3,60}?)['’]s?\s+Post\b/i)?.[1]?.trim();
+  if (pos) return isPlausibleName(pos) ? pos : null;
   const tail = t.split(/\s+[|]\s+/).pop()?.trim();
   return tail && isPlausibleName(tail) ? tail : null;
 }
