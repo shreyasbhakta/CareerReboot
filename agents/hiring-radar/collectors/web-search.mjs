@@ -84,6 +84,17 @@ export const engines = {
       return (data?.organic || []).slice(0, count).map((r) => ({ url: r.link, title: r.title, snippet: r.snippet || '', date: r.date || null }));
     },
   },
+  serpapi: {
+    env: 'SERPAPI_API_KEY',
+    ready: (env) => Boolean(env.SERPAPI_API_KEY?.trim()),
+    async search(http, env, query, { days, count }) {
+      const url = `https://serpapi.com/search.json?engine=google&q=${encodeURIComponent(query)}&num=${Math.min(count, 20)}${days ? `&tbs=${googleFresh[rangeFor(days)]}` : ''}&api_key=${encodeURIComponent(env.SERPAPI_API_KEY.trim())}`;
+      const data = await http.getJson(url);
+      // SerpApi reports a spent plan with HTTP 200 and an `error` field.
+      if (data?.error && !/hasn't returned any results/i.test(data.error)) throw Object.assign(new Error(data.error), { status: /run out|limit|credits/i.test(data.error) ? 402 : undefined });
+      return (data?.organic_results || []).slice(0, count).map((r) => ({ url: r.link, title: r.title, snippet: r.snippet || '', date: r.date || null }));
+    },
+  },
   exa: {
     env: 'EXA_API_KEY',
     ready: (env) => Boolean(env.EXA_API_KEY?.trim()),

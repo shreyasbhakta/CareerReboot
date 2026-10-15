@@ -9,7 +9,7 @@ export const dynamic = "force-dynamic";
 // Runs agents/hiring-radar/search-hm.mjs; the CLI owns all fetching, searching and ranking.
 const TIMEOUT_MS = 4 * 60_000;
 const OVERRIDES = ["company", "title", "location", "team"] as const;
-const PROVIDER_KEYS = ["SEARXNG_URL", "BRAVE_SEARCH_API_KEY", "SERPER_API_KEY", "EXA_API_KEY", "HUNTER_API_KEY", "MODEL_PROVIDER"] as const;
+const PROVIDER_KEYS = ["SEARXNG_URL", "BRAVE_SEARCH_API_KEY", "SERPER_API_KEY", "SERPAPI_API_KEY", "EXA_API_KEY", "HUNTER_API_KEY", "MODEL_PROVIDER"] as const;
 
 const historyFile = () => path.join(dataDir(), "search-hm.json");
 

@@ -1,7 +1,7 @@
 # Graph Report - src  (2026-10-14)
 
 ## Corpus Check
-- 233 files · ~155,166 words
+- 233 files · ~155,187 words
 - Verdict: corpus is large enough that graph structure adds value.
 - Unclassified: 3 file(s) not represented in the graph (top: .woff2 2, .css 1)
 
@@ -11,7 +11,7 @@
 - Token cost: 0 input · 0 output
 
 ## Graph Freshness
-- Built from commit: `c37a0bfa`
+- Built from commit: `7c37818c`
 - Run `git rev-parse HEAD` and compare to check if the graph is stale.
 - Run `graphify update .` after code changes (no API cost).
 
@@ -366,13 +366,13 @@ Nodes (4): extractForm(), fieldGroup(), groupLabel(), labelFor()
 _Questions this graph is uniquely positioned to answer:_
 
 - **Why does `careerOpsRoot()` connect `careerOpsRoot` to `hiring-radar.ts`, `followups-view.tsx`, `settings.ts`, `providers.ts`, `registry.ts`, `ref_node_path`, `api/run/route.ts`, `explore/route.ts`, `career-ops.ts`, `api/status/route.ts`, `drive.ts`, `whats-new/route.ts`, `rootScript`, `ai/route.ts`, `cv/page.tsx`, `prefill/route.ts`, `pipeline.ts`, `default/route.ts`, `ref_node_fs`, `tracker-lock.ts`, `ref_node_child_process`, `ingest/route.ts`, `move-back-to-evaluate/route.ts`, `scan.ts`, `readMemory`, `delete/route.ts`, `save/route.ts`, `cv/route.ts`?**
-  _High betweenness centrality (0.113) - this node is a cross-community bridge._
+  _High betweenness centrality (0.115) - this node is a cross-community bridge._
 - **What connects `AUTO_FIRE_MAX`, `BATCH_CAP`, `CANON_STATUS` to the rest of the system?**
   _376 weakly-connected nodes found - possible documentation gaps or missing edges._
 - **Should `report-view.tsx` be split into smaller, more focused modules?**
   _Cohesion score 0.05333333333333334 - nodes in this community are weakly interconnected._
 - **Why does `cn()` connect `cn` to `report-view.tsx`, `config-form.tsx`, `followups-view.tsx`, `apply-view.tsx`, `registry.ts`, `app-shell.tsx`, `job-store.tsx`, `ref_lucide_react`, `hiring-radar-view.tsx`, `assistant-console.tsx`, `back-to-top.tsx`, `discovering-state.tsx`, `explorer-view.tsx`, `inbox-triage.tsx`, `explore.ts`, `research-view.tsx`?**
-  _High betweenness centrality (0.095) - this node is a cross-community bridge._
+  _High betweenness centrality (0.092) - this node is a cross-community bridge._
 - **Should `hiring-radar.ts` be split into smaller, more focused modules?**
   _Cohesion score 0.06018018018018018 - nodes in this community are weakly interconnected._
 - **Why does `AssistantConsole()` connect `assistant-console.tsx` to `report-view.tsx`, `apply-view.tsx`, `cn`, `app-shell.tsx`, `job-store.tsx`, `discovering-state.tsx`?**

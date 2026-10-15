@@ -37,7 +37,7 @@ const USAGE = `Usage: node agents/hiring-radar/search-hm.mjs <job-url> [options]
   -h, --help         This message
 
 Search providers come from env (SEARXNG_URL, BRAVE_SEARCH_API_KEY, SERPER_API_KEY,
-EXA_API_KEY, HUNTER_API_KEY). Results are leads with evidence; confirm before reaching out.`;
+SERPAPI_API_KEY, EXA_API_KEY, HUNTER_API_KEY). Results are leads with evidence; confirm before reaching out.`;
 const HISTORY_MAX = 30;
 
 const readStdin = async () => { let s = ''; for await (const chunk of process.stdin) s += chunk; return s; };
