@@ -9,9 +9,9 @@ ENV DEBIAN_FRONTEND=noninteractive \
     NEXT_TELEMETRY_DISABLED=1 \
     PLAYWRIGHT_BROWSERS_PATH=/ms-playwright
 
-# cron runs the scheduled scans; texlive builds the LaTeX CV.
+# cron runs the scheduled scans; texlive builds the LaTeX CV; poppler checks the tailored resume.
 RUN apt-get update \
- && apt-get install -y --no-install-recommends cron tzdata latexmk texlive-latex-recommended texlive-latex-extra texlive-fonts-recommended texlive-xetex \
+ && apt-get install -y --no-install-recommends cron tzdata zip poppler-utils latexmk texlive-latex-recommended texlive-latex-extra texlive-fonts-recommended texlive-xetex \
  && rm -rf /var/lib/apt/lists/*
 
 WORKDIR /app

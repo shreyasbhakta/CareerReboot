@@ -4,6 +4,7 @@
 agents/career-ops/.env
 agents/career-ops/cv.md
 agents/career-ops/resume.tex
+agents/career-ops/resume-variants
 agents/career-ops/article-digest.md
 agents/career-ops/voice-dna.md
 agents/career-ops/portals.yml

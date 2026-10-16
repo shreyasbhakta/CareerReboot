@@ -94,6 +94,7 @@ scp agents/hiring-radar/config.yml          $H:~/CareerReboot/agents/hiring-rada
 scp agents/career-ops/config/profile.yml    $H:~/CareerReboot/agents/career-ops/config/profile.yml
 scp agents/career-ops/portals.yml           $H:~/CareerReboot/agents/career-ops/portals.yml
 scp agents/career-ops/cv.md                 $H:~/CareerReboot/agents/career-ops/cv.md
+scp -r agents/career-ops/resume-variants    $H:~/CareerReboot/agents/career-ops/   # resume tailor
 ssh $H 'chmod 600 ~/CareerReboot/agents/*/.env && sudo systemctl restart career-ops-web'
 ```
 

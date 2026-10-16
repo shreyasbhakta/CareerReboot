@@ -10,7 +10,10 @@ SWAP_SIZE="${SWAP_SIZE:-2G}"
 
 echo "==> Installing system packages"
 sudo apt-get update -y
-sudo apt-get install -y curl git ca-certificates
+sudo apt-get install -y curl git ca-certificates zip
+
+# The resume tailor compiles with pdflatex and checks pages/text with poppler.
+sudo apt-get install -y --no-install-recommends texlive-latex-recommended texlive-latex-extra texlive-fonts-recommended poppler-utils
 
 # Small boxes (GCP e2-micro, 1 GB) run out of memory during `next build` or when a
 # Chromium scan overlaps the dashboard; swap turns that crash into a slowdown.
