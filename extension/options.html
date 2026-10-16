@@ -1,0 +1,19 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <title>Resume Tailor settings</title>
+  <link rel="stylesheet" href="popup.css">
+  <style>body { width: auto; max-width: 480px; }</style>
+</head>
+<body>
+  <h1>Resume Tailor settings</h1>
+  <label for="backend">CareerReboot backend URL</label>
+  <input id="backend" type="url" placeholder="http://localhost:3111">
+  <p class="hint">The dev server, where Claude actions run. Only localhost and 127.0.0.1 are allowed.</p>
+  <button id="save" type="button">Save</button>
+  <p id="status" role="status" aria-live="polite"></p>
+  <script src="common.js"></script>
+  <script src="options.js"></script>
+</body>
+</html>
