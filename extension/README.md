@@ -11,8 +11,10 @@ dashboard, and downloads a tailored one-page PDF resume. Nothing runs until you 
   and if there's no selection, the largest block of text on the page. It only reads the page
   you already have open: it never navigates, clicks, logs in or fetches anything.
 - You can fix the text, the company and the base variant before you generate.
-- **Generate** calls `POST /api/resume/tailor` and downloads `<Your_Name>_<Company>.pdf`. The
-  status line lists what was left out because it's on your "Do not claim" list.
+- **Generate** calls `POST /api/resume/tailor` from the extension's background worker, so you can
+  close the popup or switch tabs while it runs. The PDF saves to `Downloads/CareerReboot/<Your_Name>_<Company>.pdf`;
+  reopen the popup to see the status, including what was left out because it's on your "Do not claim" list.
+  Every run is also kept on the backend under `agents/career-ops/output/resume-tailor/`.
 
 ## Load it unpacked
 
@@ -45,4 +47,5 @@ manifest grants no other host.
 | `extractors.js` | Per-site selectors (data). Add a site by adding an entry |
 | `content.js` | Injected on open: selectors, then selection, then largest text block |
 | `popup.*` | The popup UI |
+| `background.js` | Runs the request and the download, so they survive the popup closing |
 | `options.*`, `common.js` | Backend URL setting |
