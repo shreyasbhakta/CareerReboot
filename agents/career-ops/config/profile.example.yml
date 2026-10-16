@@ -185,6 +185,14 @@ cv:
 # latex:
 #   source: resume.tex
 
+# (Optional) Resume tailor (Chrome extension + POST /api/resume/tailor).
+# Copy resume-variants.example/ to resume-variants/ (gitignored) and put your
+# PROFILE_SOURCE_OF_TRUTH.md and one .tex per base variant there.
+# resume_tailor:
+#   variants_dir: resume-variants   # relative to this checkout
+#   default_variant: backend        # a .tex file name without the extension
+#   file_prefix: Alex_Example       # PDF name prefix; default is first + last of candidate.full_name
+
 # ── Cover Letter Settings ──────────────────────────────────────────────────
 #
 # Used by `/career-ops cover` and the cover letter sub-flow in `/career-ops pdf`.

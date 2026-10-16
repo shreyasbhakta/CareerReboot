@@ -1,6 +1,7 @@
 # Personal data (user fills these)
 cv.md
 resume.tex
+resume-variants/
 article-digest.md
 local/
 # Point-in-time snapshots taken before destructive ops (fresh-start, sync) —
