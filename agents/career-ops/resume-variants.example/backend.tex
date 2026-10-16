@@ -1,0 +1,46 @@
+% Fictional placeholder variant. Copy resume-variants.example/ to resume-variants/ and replace.
+\documentclass[10pt,letterpaper]{article}
+\usepackage[margin=0.5in]{geometry}
+\usepackage[hidelinks]{hyperref}
+\usepackage{enumitem}
+\usepackage{titlesec}
+\input{glyphtounicode}
+\pdfgentounicode=1
+\setlength{\parindent}{0pt}
+\pagenumbering{gobble}
+\titleformat{\section}{\large\bfseries}{}{0em}{}[\titlerule]
+\setlist[itemize]{leftmargin=13pt,itemsep=0pt,topsep=1pt}
+
+\begin{document}
+
+\begin{center}
+  {\LARGE \textbf{ALEX EXAMPLE}}\\[2pt]
+  Springfield \textbar\ \href{mailto:alex@example.com}{alex@example.com}
+\end{center}
+
+\section*{Summary}
+Backend engineer building payment APIs in Java and Spring Boot, handling 2,000+ daily transactions.
+
+\section*{Technical Skills}
+\textbf{Languages:} Java, Python, TypeScript\\
+\textbf{Backend:} Spring Boot, FastAPI, Kafka, PostgreSQL, Redis\\
+\textbf{Infrastructure:} Docker, AWS (EC2, S3)
+
+\section*{Experience}
+\textbf{Software Engineer} \hfill Jan 2022 -- Present\\
+\textbf{Example Payments} \hfill Springfield
+\begin{itemize}
+  \item Built a Java and Spring Boot checkout API handling 2,000+ daily transactions.
+  \item Moved order validation onto Kafka consumers, cutting p95 latency 25\%.
+\end{itemize}
+
+\textbf{Junior Developer} \hfill Jun 2020 -- Dec 2021\\
+\textbf{Sample Labs} \hfill Springfield
+\begin{itemize}
+  \item Wrote Python ETL jobs loading 40 GB per day into PostgreSQL.
+\end{itemize}
+
+\section*{Projects}
+\textbf{Ledger Lite}: double-entry ledger service in Python and FastAPI with 95\% test coverage.
+
+\end{document}

@@ -11,6 +11,7 @@ import {
   CircleCheck,
   CircleDashed,
   ExternalLink,
+  Download,
 } from "lucide-react";
 import { cn } from "@/lib/cn";
 import { CadenceSettings } from "@/components/followups/cadence-settings";
@@ -326,6 +327,40 @@ export function ConfigForm() {
       </button>
 
       <CadenceSettings />
+
+      {/* Resume tailor browser extension */}
+      <label className="mt-8 mb-2 block text-xs font-semibold uppercase tracking-[0.18em] text-muted">
+        Chrome extension
+      </label>
+      <div className="rounded-xl border border-border bg-surface/50 px-4 py-3">
+        <div className="flex items-start justify-between gap-4 max-sm:flex-col">
+          <span className="min-w-0">
+            <span className="block text-sm font-medium text-foreground">Resume Tailor</span>
+            <span className="mt-0.5 block text-xs text-faint">
+              Grabs the job description from the page you&apos;re on and downloads a one-page resume tailored to it,
+              built only from your master profile. Runs on Claude Code from this dev server.
+            </span>
+          </span>
+          <a
+            href="/api/extension"
+            download
+            className="inline-flex shrink-0 items-center justify-center gap-1.5 rounded-full border border-brand/50 px-4 py-1.5 text-sm font-medium text-brand transition-colors hover:bg-brand-soft max-sm:min-h-[44px]"
+          >
+            <Download className="size-4" /> Download extension
+          </a>
+        </div>
+        <ol className="mt-3 list-decimal space-y-1 pl-5 text-xs text-muted">
+          <li>Unzip it, open chrome://extensions, turn on Developer mode and click Load unpacked.</li>
+          <li>
+            Copy the extension&apos;s ID into <span className="font-mono">web/.env.local</span> as{" "}
+            <span className="font-mono">CAREER_OPS_ALLOWED_ORIGINS=chrome-extension://&lt;id&gt;</span>, then restart the dev server.
+          </li>
+          <li>
+            Put your profile and base .tex variants in <span className="font-mono">resume-variants/</span> (see
+            resume-variants.example/).
+          </li>
+        </ol>
+      </div>
 
       <div className="mt-8 flex items-center gap-3">
         <button

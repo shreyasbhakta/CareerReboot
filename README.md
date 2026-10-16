@@ -17,10 +17,11 @@ CareerReboot combines three capabilities behind one dashboard. Everything runs o
 | **Hiring Radar** | Scans public sources daily for people and companies actively hiring for roles that match your profile, scores each result with an explainable breakdown, and flags warm introductions from your own LinkedIn export. |
 | **CV builder** | Edits and renders a Markdown or LaTeX CV and produces tailored PDFs per role. |
 | **Pipeline** (career-ops) | Scans ATS job boards, evaluates roles, tracks applications to an outcome, schedules follow-ups, drafts outreach. |
+| **Resume tailor** | A Chrome extension sends the job description you're viewing to the dashboard and downloads a one-page PDF tailored from your master profile. See [Resume tailor](#resume-tailor). |
 
 ## Contents
 
-1. [Product modes](#product-modes) · 2. [Architecture](#architecture) · 3. [Hiring Radar](#hiring-radar) · 4. [Security and privacy](#security-and-privacy) · 5. [Requirements and installation](#requirements-and-installation) · 6. [Running](#running) · 7. [Configuration](#configuration) · 8. [Deployment](#deployment) · 9. [Development](#development) · 10. [Compliance](#compliance) · 11. [Citations](#citations) · 12. [License](#license)
+1. [Product modes](#product-modes) · 2. [Architecture](#architecture) · 3. [Hiring Radar](#hiring-radar) · 4. [Security and privacy](#security-and-privacy) · 5. [Requirements and installation](#requirements-and-installation) · 6. [Running](#running) · 7. [Resume tailor](#resume-tailor) · 8. [Configuration](#configuration) · 9. [Deployment](#deployment) · 10. [Development](#development) · 11. [Compliance](#compliance) · 12. [Citations](#citations) · 13. [License](#license)
 
 ## Product modes
 
@@ -136,7 +137,7 @@ Results can be filtered by status, type, source, connection, person, location, r
 - **Secrets** are read only from `.env` files or CI secrets, redacted from logs, written with mode 600, and never returned to the browser.
 - **Data egress** happens only to services you configure: search queries to the search provider; short post excerpts plus a roles/skills summary (never email, phone or full CV) to the model provider; result summaries to the webhook.
 - **Network behaviour.** Bounded concurrency, per-host spacing, timeouts, exponential backoff with jitter, `Retry-After` honoured, search results cached 22 h, query volume capped (8 per run by default).
-- **No automation of third-party accounts.** No LinkedIn login, scraping, or anti-bot circumvention; nothing is auto-sent or auto-submitted.
+- **No automation of third-party accounts.** No LinkedIn login, scraping, or anti-bot circumvention; nothing is auto-sent or auto-submitted. The resume tailor extension reads only the job page you already have open, and only when you open its popup; it never navigates, clicks or fetches pages itself.
 
 ## Requirements and installation
 
@@ -167,6 +168,30 @@ Then open the dashboard, click **Settings**, and create your local files from th
 
 Scheduling: the **Schedule** tab installs a user crontab entry; `deploy/vm/crontab.example` covers a VM; `.github/workflows/hiring-radar.yml` runs daily at ~07:35 America/New_York and on demand (results published as a workflow artifact and job summary, history persisted with the Actions cache; nothing is committed).
 
+## Resume tailor
+
+The Chrome extension in `extension/` reads the job description on the page you're viewing (LinkedIn, Greenhouse, Lever, Workday and Ashby have specific selectors; otherwise your selection, then the largest text block). It sends it to `POST /api/resume/tailor` and downloads `<First>_<Last>_<Company>.pdf`.
+
+The backend asks Claude Code (no tools, no MCP servers) to tailor one of your base `.tex` variants using only facts from your `PROFILE_SOURCE_OF_TRUTH.md`. It refuses a `.tex` that changes the preamble or uses shell, file or lexer primitives, or that newly mentions anything on your "Do not claim" list. It compiles with `pdflatex -no-shell-escape` in a temp dir under TeX's paranoid file mode with a 60 s timeout, trims once if the PDF is over one page, and fails on any em dash. The keyword analysis (`matched_keywords`, `missing_keywords`, `gaps`, `warnings`) comes back base64-encoded in the `X-Tailor-Report` header. Every generation is saved under `agents/career-ops/output/resume-tailor/` and listed by `GET /api/resume/generations`; `GET /api/resume/generations/<id>` downloads one again (`?format=tex` for the source).
+
+**Install TeX Live and poppler** (`pdflatex`, `pdfinfo`, `pdftotext`):
+
+```bash
+brew install --cask mactex-no-gui && brew install poppler        # macOS
+sudo apt-get install texlive-latex-recommended texlive-latex-extra texlive-fonts-recommended poppler-utils   # Debian/Ubuntu
+```
+
+**Add your files** (git-ignored): copy `agents/career-ops/resume-variants.example/` to `agents/career-ops/resume-variants/`, then replace `PROFILE_SOURCE_OF_TRUTH.md` with yours and add one `.tex` per base variant. The extension's dropdown lists every `.tex` in that folder. Optional `resume_tailor` settings (folder, default variant, file-name prefix) are documented in `config/profile.example.yml`.
+
+**Run it locally:**
+
+1. Start the dev server (Claude actions only run there): `cd agents/career-ops/web && npm run dev -- -p 3111`.
+2. Download the extension from **Config → Chrome extension** (or use `extension/`), and load it unpacked at `chrome://extensions`.
+3. Allow its origin in `agents/career-ops/web/.env.local` and restart the dev server: `CAREER_OPS_ALLOWED_ORIGINS=chrome-extension://<extension-id>`.
+4. The backend URL defaults to `http://localhost:3111`. Change it under **Backend URL** in the popup.
+
+Details: [`extension/README.md`](extension/README.md).
+
 ## Configuration
 
 Every per-user setting is a git-ignored local file next to a committed example that holds only placeholders. The **Settings** popup lists them all (registry: `agents/career-ops/web/src/lib/settings.ts`), validates edits, keeps a `.bak-*` copy of the previous version and writes with owner-only permissions. Nothing personal is committed.
@@ -177,6 +202,7 @@ Every per-user setting is a git-ignored local file next to a committed example t
 | Hiring Radar: locations, roles, skills, scoring (overrides only) | `agents/hiring-radar/config.yml` | `config.example.yml` |
 | Job research scorer | `job-finding-research/candidate-profile.yml` | `candidate-profile.example.yml` |
 | Portals tracked by the scanner | `agents/career-ops/portals.yml` | `templates/portals.example.yml` |
+| Resume tailor: master profile and base `.tex` variants | `agents/career-ops/resume-variants/` | `resume-variants.example/` |
 | Secrets | `agents/hiring-radar/.env` (Hiring Radar → Keys & data) or CI secrets | — |
 | Appearance: background video on/off, theme | browser storage | — |
 
@@ -189,6 +215,7 @@ Every per-user setting is a git-ignored local file next to a committed example t
 | `HIRING_RADAR_NOTIFY`, `HIRING_RADAR_WEBHOOK_URL` | Webhook notifications |
 | `LINKEDIN_CONNECTIONS_CSV` | Path to the connections export |
 | `HIRING_RADAR_DATA_DIR`, `HIRING_RADAR_CONFIG` | Redirect output / add a config file |
+| `CAREER_OPS_ALLOWED_ORIGINS` | Extra origins allowed to call the dashboard API, e.g. `chrome-extension://<id>` for the resume tailor (`agents/career-ops/web/.env.local`) |
 
 ### GitHub Actions
 
@@ -226,6 +253,7 @@ npm run graph                 # refresh the Graphify code graph (uv tool install
 agents/career-ops        pipeline + dashboard (web/)
 agents/hiring-radar      scanner, scoring, storage, formatters, tests, skills
 agents/outreach          draft-only outreach skill
+extension/               Chrome extension for the resume tailor
 deploy/                  VM scripts (GCP/AWS), stable Docker runtime, OmniRoute compose
 docs/architecture        design records
 .github/workflows        CI on every PR, scheduled scan

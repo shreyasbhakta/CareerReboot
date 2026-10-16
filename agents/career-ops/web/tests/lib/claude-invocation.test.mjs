@@ -15,6 +15,7 @@ import {
   toolScopeFor,
   grantsWriteCapability,
   claudeCliArgs,
+  claudeNoToolsArgs,
   argValue,
   toolNames,
   KNOWN_KINDS,
@@ -223,4 +224,14 @@ test("argValue: absent or dangling flags yield an empty string, not a crash", ()
   // Then reading it back is safe — a guard must not throw on malformed argv
   assert.equal(argValue(["-p", "x"], "--allowedTools"), "");
   assert.equal(argValue(["--allowedTools"], "--allowedTools"), "");
+});
+
+test("claudeNoToolsArgs: no tools, no MCP servers, every write tool denied", () => {
+  const args = claudeNoToolsArgs({ prompt: "tailor" });
+  assert.equal(argValue(args, "-p"), "tailor");
+  assert.equal(argValue(args, "--tools"), "");
+  assert.ok(args.includes("--strict-mcp-config"));
+  assert.equal(argValue(args, "--allowedTools"), "");
+  const denied = toolNames(argValue(args, "--disallowedTools"));
+  for (const tool of [...WRITE_CAPABLE_TOOLS, "WebFetch", "WebSearch", "Task"]) assert.ok(denied.includes(tool), tool);
 });
