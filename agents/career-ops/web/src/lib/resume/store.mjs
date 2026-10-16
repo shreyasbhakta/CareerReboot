@@ -64,7 +64,7 @@ export function listGenerations(root) {
     .map(({ jd_text: _jd, ...rest }) => rest);
 }
 
-/** @returns {object | null} */
+/** @returns {{file_name: string, [key: string]: unknown} | null} */
 export function readMeta(root, id) {
   if (!ID.test(id)) return null;
   try {
