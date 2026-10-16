@@ -165,3 +165,22 @@ export function argValue(args, flag) {
   const i = args.indexOf(flag);
   return i === -1 || i + 1 >= args.length ? "" : args[i + 1];
 }
+
+/**
+ * The headless `claude` argv for a prompt-in, text-out run that needs no tools at all
+ * (resume tailoring: everything it reads is already in the prompt). `--tools ""` removes
+ * every built-in tool, --strict-mcp-config loads no MCP server, and the deny list repeats
+ * the rule so a CLI that ignored `--tools` would still have nothing to write with.
+ *
+ * @param {{prompt: string}} args
+ * @returns {string[]}
+ */
+export function claudeNoToolsArgs({ prompt }) {
+  return [
+    "-p", prompt,
+    "--output-format", "json",
+    "--tools", "",
+    "--strict-mcp-config",
+    "--disallowedTools", [...WRITE_CAPABLE_TOOLS, ...ALWAYS_DENIED, "WebFetch", "WebSearch"].join(","),
+  ];
+}
